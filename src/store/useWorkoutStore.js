@@ -2,6 +2,15 @@ import { create } from 'zustand';
 import { dummyActiveWorkout } from '../utils/dummyData';
 
 export const useWorkoutStore = create((set) => ({
+  
+  user: {
+    username: "Jason",
+    level: 5,
+    currentXP: 1450,
+    xpToNextLevel: 2000,
+    rank: "Iron Novice"
+  },
+
   activeWorkout: dummyActiveWorkout,
 
   toggleSetComplete: (exerciseIndex, setIndex) => set((state) => {
