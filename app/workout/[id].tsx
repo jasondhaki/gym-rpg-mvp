@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useWorkoutStore } from '../../src/store/useWorkoutStore';
@@ -47,9 +47,21 @@ export default function ActionChamberScreen() {
 
       {/* Hero Section */}
       <View style={styles.heroContainer}>
-        <View style={styles.animationPlaceholder}>
-          <Ionicons name={quest.icon || 'barbell'} size={80} color="#3f3f46" />
-          <Text style={styles.placeholderText}>ANIMATION RENDER ZONE</Text>
+        <View style={styles.imageContainer}>
+          {quest.image ? (
+            /* If the image exists in dummyData, render it */
+            <Image 
+              source={quest.image} 
+              style={styles.exerciseImage}
+              resizeMode="cover"
+            />
+          ) : (
+            /* If there is no image, render a fallback UI */
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name={quest.icon || 'barbell'} size={80} color="#3f3f46" />
+              <Text style={{ color: '#3f3f46', marginTop: 12, fontWeight: 'bold', letterSpacing: 1 }}>ASSET MISSING</Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -98,5 +110,7 @@ const styles = StyleSheet.create({
   objectiveLabel: { color: '#71717a', fontSize: 12, letterSpacing: 2, marginBottom: 8 },
   objectiveValue: { color: 'white', fontSize: 20, fontWeight: '600' },
   doneButton: { backgroundColor: '#10b981', marginHorizontal: 20, marginBottom: 40, paddingVertical: 20, borderRadius: 16, alignItems: 'center', shadowColor: '#10b981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
-  doneButtonText: { color: '#09090b', fontSize: 20, fontWeight: 'bold', letterSpacing: 1 }
+  doneButtonText: { color: '#09090b', fontSize: 20, fontWeight: 'bold', letterSpacing: 1 },
+  imageContainer: { width: '100%', aspectRatio: 1, backgroundColor: '#18181b', borderRadius: 24, borderWidth: 1, borderColor: '#27272a', overflow: 'hidden' },
+  exerciseImage: { width: '100%', height: '100%',opacity: 0.85 },
 });
