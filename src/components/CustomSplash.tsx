@@ -28,21 +28,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroImage: {
-    width: '60%', // Adjusted slightly so it leaves room for the big text
+    width: '60%',
     height: '40%',
   },
   textContainer: {
     position: 'absolute',
-    bottom: 80, // Pushes the text up from the bottom edge
+    bottom: 80, 
+    width: '100%',
     alignItems: 'center',
   },
   title: {
-    color: '#10b981', // Your Neon Green
+    color: '#10b981', 
     fontSize: 32,
-    fontFamily: 'CyberpunkFont', // Applying the custom font we loaded in _layout!
+    fontFamily: 'CyberpunkFont', 
     letterSpacing: 2,
     marginBottom: 12,
-    textShadowColor: 'rgba(16, 185, 129, 0.4)', // Adds a faint neon glow
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    textShadowColor: 'rgba(16, 185, 129, 0.4)', 
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 10,
   },
