@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+// NEW IMPORT: Added useRouter for the Interceptor
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
 import LevelUpModal from '../../src/components/LevelUpModal';
@@ -14,7 +15,6 @@ const getRankDetails = (level: number) => {
   return { title: 'APEX TITAN', icon: 'diamond', color: '#10b981', border: '#047857', glow: 0.8 };
 };
 
-// 1. HUD Stat Bar (Clean, no numbers)
 const StatBar = ({ iconName, current, max, color }: { iconName: any, current: number, max: number, color: string }) => {
   const fillPercentage = Math.min((current / max) * 100, 100);
   return (
@@ -29,7 +29,6 @@ const StatBar = ({ iconName, current, max, color }: { iconName: any, current: nu
   );
 };
 
-// 2. Detailed Modal Stat Bar (Words, precise numbers)
 const DetailedStatBar = ({ label, current, max, color }: { label: string, current: number, max: number, color: string }) => {
   const fillPercentage = Math.min((current / max) * 100, 100);
   return (
@@ -45,18 +44,19 @@ const DetailedStatBar = ({ label, current, max, color }: { label: string, curren
   );
 };
 
-
 export default function HubScreen() {
+  const router = useRouter(); // NEW: Initialize the router
+
+  // UPGRADED: Added onboarding defaults to the state
   const [player, setPlayer] = useState<PlayerData>({ 
     level: 1, totalXp: 0, lifetimeVolume: 0, currentStreak: 0, lastWorkoutDate: null,
-    str: 10, end: 10, unlockedBadges: [], pushQuestsCompleted: 0
+    str: 10, end: 10, unlockedBadges: [], pushQuestsCompleted: 0,
+    hasCompletedOnboarding: false, playerName: 'Initiate', weight: 70, height: 175, age: 20, targetArchetype: null
   });
   
   const [isLoaded, setIsLoaded] = useState(false);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [leveledUpTo, setLeveledUpTo] = useState(1);
-  
-  // NEW: State to control the Character Sheet Modal
   const [showAttributesModal, setShowAttributesModal] = useState(false);
 
   useFocusEffect(
@@ -64,7 +64,15 @@ export default function HubScreen() {
       let isActive = true;
       const fetchSave = async () => {
         const savedData = await loadGame();
+        
         if (isActive) {
+          // --- STAGE 2: THE INTERCEPTOR ---
+          // If the player hasn't built their character, hijack the navigation
+          if (!savedData.hasCompletedOnboarding) {
+            router.replace('/onboarding');
+            return; // Stop rendering the Hub entirely
+          }
+
           if (savedData.level > player.level && isLoaded) {
              setLeveledUpTo(savedData.level);
              setShowLevelUp(true);
@@ -82,11 +90,10 @@ export default function HubScreen() {
   const requiredXP = getRequiredXp(player.level);
   const xpPercentage = Math.min((player.totalXp / requiredXP) * 100, 100);
 
+  // If intercepting or loading, show nothing but the void
   if (!isLoaded) return <View style={styles.loadingContainer} />;
 
   const rankInfo = getRankDetails(player.level);
-
-  // Ceiling calculations for progress bars
   const strMax = Math.max(100, Math.ceil((player.str || 10) / 100) * 100);
   const endMax = Math.max(100, Math.ceil((player.end || 10) / 100) * 100);
   const volMax = Math.max(10000, Math.ceil((player.lifetimeVolume || 0) / 10000) * 10000);
@@ -95,14 +102,15 @@ export default function HubScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         
-        {/* 1. Identity */}
         <View style={styles.header}>
           <View style={[styles.avatarCircle, { borderColor: rankInfo.border, shadowColor: rankInfo.color, shadowOpacity: rankInfo.glow, elevation: rankInfo.glow > 0 ? 10 : 0 }]}>
             <Ionicons name={rankInfo.icon as any} size={40} color={rankInfo.color} />
           </View>
           <View style={styles.headerText}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={styles.username}>Jason Dhaki</Text>
+              {/* DYNAMIC: Now reads your actual chosen name from the hard drive */}
+              <Text style={styles.username}>{player.playerName}</Text>
+              
               {player.currentStreak >= 3 && (
                 <View style={styles.globalMultiplierBadge}>
                   <Ionicons name="flame" size={14} color="#09090b" />
@@ -114,7 +122,6 @@ export default function HubScreen() {
           </View>
         </View>
 
-        {/* 2. Level & XP Progress */}
         <View style={styles.statsCard}>
           <View style={styles.levelRow}>
             <Text style={styles.levelText}>Level {player.level}</Text>
@@ -125,14 +132,12 @@ export default function HubScreen() {
           </View>
         </View>
 
-        {/* 3. Current Objective */}
         <View style={styles.missionCard}>
             <Text style={styles.missionTitle}>Current Objective</Text>
             <Text style={styles.missionName}>Push Day Alpha</Text>
             <Text style={styles.missionStatus}>In Progress — Head to the Workout Tab</Text>
         </View>
 
-        {/* 4. The Trophy Room */}
         <View style={styles.trophyCard}>
           <Text style={styles.sectionTitle}>MEDAL CASE</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
@@ -151,7 +156,6 @@ export default function HubScreen() {
           </ScrollView>
         </View>
 
-        {/* 5. The Consistency Engine */}
         <View style={styles.streakCard}>
           <View style={styles.streakHeaderRow}>
             <Text style={styles.sectionTitle}>SYSTEM UPTIME</Text>
@@ -172,7 +176,6 @@ export default function HubScreen() {
           </Text>
         </View>
 
-        {/* 6. Combat Attributes (NOW CLICKABLE & NUMBER-FREE) */}
         <TouchableOpacity 
           style={styles.attributesCard} 
           activeOpacity={0.8}
@@ -193,7 +196,6 @@ export default function HubScreen() {
 
       </ScrollView>
 
-      {/* DETAILED ATTRIBUTES MODAL */}
       <Modal visible={showAttributesModal} transparent={true} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.detailedModalCard}>
@@ -223,7 +225,6 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#09090b' },
   loadingContainer: { flex: 1, backgroundColor: '#09090b' },
   container: { flex: 1, padding: 20, paddingTop: 40 },
-  
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 40 },
   avatarCircle: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#18181b', borderWidth: 2, alignItems: 'center', justifyContent: 'center', marginRight: 16, shadowOffset: { width: 0, height: 0 }, shadowRadius: 15 },
   headerText: { flex: 1 },
@@ -231,19 +232,16 @@ const styles = StyleSheet.create({
   rank: { fontSize: 16, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4, fontFamily: 'CyberpunkFont' },
   globalMultiplierBadge: { backgroundColor: '#10b981', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, marginLeft: 12 },
   globalMultiplierText: { color: '#09090b', fontWeight: 'bold', fontSize: 12, marginLeft: 4, fontFamily: 'monospace' },
-
   statsCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: '#27272a' },
   levelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 12 },
   levelText: { color: 'white', fontSize: 24, fontWeight: 'bold' },
   xpText: { color: '#a1a1aa', fontSize: 14, fontWeight: '500', fontFamily: 'monospace' },
   xpBarBackground: { height: 12, backgroundColor: '#27272a', borderRadius: 6, overflow: 'hidden' },
   xpBarFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 6 }, 
-  
   missionCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 30, borderWidth: 1, borderColor: '#27272a', borderLeftWidth: 4, borderLeftColor: '#10b981' },
   missionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
   missionName: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
   missionStatus: { color: '#a1a1aa', fontSize: 14 },
-  
   trophyCard: { backgroundColor: '#18181b', borderRadius: 16, paddingVertical: 20, paddingLeft: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
   badgeContainer: { width: 120, marginRight: 16, alignItems: 'center' },
   badgeLocked: { opacity: 0.5 },
@@ -252,7 +250,6 @@ const styles = StyleSheet.create({
   badgeName: { color: 'white', fontSize: 14, fontWeight: 'bold', fontFamily: 'CyberpunkFont', textAlign: 'center', marginBottom: 4 },
   badgeNameLocked: { color: '#71717a' },
   badgeDesc: { color: '#a1a1aa', fontSize: 10, textAlign: 'center', lineHeight: 14 },
-
   streakCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
   streakHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   streakCountText: { color: '#10b981', fontSize: 16, fontWeight: 'bold', fontFamily: 'CyberpunkFont' },
@@ -262,27 +259,20 @@ const styles = StyleSheet.create({
   dayText: { color: '#71717a', fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace' },
   dayTextActive: { color: '#10b981' },
   streakSubtext: { color: '#a1a1aa', fontSize: 12, fontStyle: 'italic', textAlign: 'center' },
-
   attributesCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 10, borderWidth: 1, borderColor: '#27272a' },
   sectionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20, fontFamily: 'monospace', fontWeight: 'bold' },
   sectionTitleWithoutMargin: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace', fontWeight: 'bold' },
-  
-  // Hub Stat Bar Styles
   statRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   iconWrapper: { width: 30, alignItems: 'center', justifyContent: 'center' },
   statTrack: { flex: 1, height: 8, backgroundColor: '#27272a', borderRadius: 4, marginHorizontal: 12, overflow: 'hidden' },
   statFill: { height: '100%', borderRadius: 4 },
-
-  // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(9, 9, 11, 0.9)', justifyContent: 'flex-end' },
   detailedModalCard: { backgroundColor: '#18181b', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, paddingBottom: 50, borderWidth: 1, borderColor: '#27272a', borderBottomWidth: 0 },
   modalTitleText: { color: 'white', fontSize: 24, fontWeight: 'bold', fontFamily: 'CyberpunkFont', letterSpacing: 1 },
-  
   detailedStatContainer: { marginBottom: 24 },
   detailedStatHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, paddingHorizontal: 12 },
   detailedStatLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: 1 },
   detailedStatNumbers: { color: 'white', fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace' },
-  
   closeModalButton: { marginTop: 20, backgroundColor: 'rgba(16, 185, 129, 0.1)', paddingVertical: 15, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#10b981' },
   closeModalText: { color: '#10b981', fontSize: 14, fontWeight: 'bold', letterSpacing: 2, fontFamily: 'monospace' },
 });
