@@ -4,8 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { useState, useEffect } from 'react';
 
+// 1. Import the Font Loader
+import { useFonts } from 'expo-font';
+import { BlackOpsOne_400Regular } from '@expo-google-fonts/black-ops-one';
+
 import { useColorScheme } from '@/hooks/use-color-scheme';
-// Make sure this path points to where you created the new component!
 import CustomSplash from '../src/components/CustomSplash'; 
 
 export const unstable_settings = {
@@ -14,26 +17,25 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  
-  // 1. Set up the State for the Splash Screen
   const [appReady, setAppReady] = useState(false);
 
-  // 2. The Timer Intercept
+  // 2. Load the font
+  const [fontsLoaded] = useFonts({
+    'CyberpunkFont': BlackOpsOne_400Regular, 
+  });
+
   useEffect(() => {
-    // Holds the splash screen for 2.5 seconds (2500ms).
     const timer = setTimeout(() => {
       setAppReady(true);
     }, 2500);
-
     return () => clearTimeout(timer);
   }, []);
 
-  // 3. The Hijack: If timer isn't done, return the Splash Component
-  if (!appReady) {
+  // 3. Wait for BOTH the font to load AND the timer to finish
+  if (!fontsLoaded || !appReady) {
     return <CustomSplash />;
   }
 
-  // 4. Once timer hits 0, return your actual app UI
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack screenOptions={{ headerShown: false }}>
