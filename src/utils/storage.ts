@@ -13,10 +13,13 @@ export interface PlayerData {
   unlockedBadges: string[];
   pushQuestsCompleted: number;
   
-  // --- NEW: ISOLATED SESSION TRACKING ---
-  // A dictionary where Keys = questId, Values = array of exerciseIds
-  // Example: { "push_day_alpha": ["ch_1", "sh_2"], "leg_day_reckoning": ["lg_5"] }
+  // --- SESSION TRACKING ---
   completedToday: Record<string, string[]>; 
+
+  // --- NEW: REST SHIELD SYSTEM ---
+  restTokens: number; // Current available shields (0-3)
+  lastTokenResetDate: string | null; // Tracks the last Monday refill
+  restDaysUsed: string[]; // History of dates where a shield was consumed
 
   // --- BIOMETRIC & IDENTITY DATA ---
   hasCompletedOnboarding: boolean;
@@ -37,9 +40,14 @@ const DEFAULT_STATS: PlayerData = {
   end: 10,
   unlockedBadges: [], 
   pushQuestsCompleted: 0,
-  completedToday: {}, // Initialize as an empty object (dictionary)
+  completedToday: {}, 
 
-  // Defaults for a brand new save
+  // Rest System Defaults
+  restTokens: 3,
+  lastTokenResetDate: null,
+  restDaysUsed: [],
+
+  // User Identity
   hasCompletedOnboarding: false,
   playerName: 'Jason Dhaki', 
   weight: 70,
@@ -65,13 +73,19 @@ export const loadGame = async (): Promise<PlayerData> => {
       const parsedData = JSON.parse(jsonValue);
       
       // --- DATA MIGRATION PATCH ---
-      // If the user's save file still has the old flat array (from the previous version),
-      // we must wipe it and convert it to an object so the app doesn't crash on quest filtering.
+      // 1. Convert old array-based session tracking to object-based
       if (Array.isArray(parsedData.completedToday)) {
         parsedData.completedToday = {};
       }
 
-      // Merge defaults to catch any completely missing fields
+      // 2. Initialize Rest Shield fields for existing players
+      if (parsedData.restTokens === undefined) {
+        parsedData.restTokens = 3;
+        parsedData.restDaysUsed = [];
+        parsedData.lastTokenResetDate = null;
+      }
+
+      // Merge defaults to ensure no property is ever undefined
       return { ...DEFAULT_STATS, ...parsedData };
     }
     

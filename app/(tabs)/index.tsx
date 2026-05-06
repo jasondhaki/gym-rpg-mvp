@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// NEW IMPORT: Added useRouter for the Interceptor
 import { useFocusEffect, useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
 import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
 import LevelUpModal from '../../src/components/LevelUpModal';
@@ -45,12 +45,13 @@ const DetailedStatBar = ({ label, current, max, color }: { label: string, curren
 };
 
 export default function HubScreen() {
-  const router = useRouter(); // NEW: Initialize the router
+  const router = useRouter(); 
 
-  // UPGRADED: Added onboarding defaults to the state
   const [player, setPlayer] = useState<PlayerData>({ 
     level: 1, totalXp: 0, lifetimeVolume: 0, currentStreak: 0, lastWorkoutDate: null,
     str: 10, end: 10, unlockedBadges: [], pushQuestsCompleted: 0,
+    completedToday: {},
+    restTokens: 3, lastTokenResetDate: null, restDaysUsed: [],
     hasCompletedOnboarding: false, playerName: 'Initiate', weight: 70, height: 175, age: 20, targetArchetype: null
   });
   
@@ -59,20 +60,96 @@ export default function HubScreen() {
   const [leveledUpTo, setLeveledUpTo] = useState(1);
   const [showAttributesModal, setShowAttributesModal] = useState(false);
 
+  const WEEK_DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const [weekDates, setWeekDates] = useState<Date[]>([]);
+
+  useEffect(() => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diffToMonday));
+    monday.setHours(0,0,0,0); 
+    const week = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(monday);
+      day.setDate(monday.getDate() + i);
+      week.push(day);
+    }
+    setWeekDates(week);
+  }, []);
+
+  // --- REST TOKEN REFILL LOGIC ---
+  const checkTokenRefill = (data: PlayerData) => {
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const thisMondayStr = new Date(today.setDate(diff)).toISOString().split('T')[0];
+
+    if (data.lastTokenResetDate !== thisMondayStr) {
+      return { ...data, restTokens: 3, lastTokenResetDate: thisMondayStr };
+    }
+    return data;
+  };
+
+  const useRestShield = async () => {
+    if (player.restTokens <= 0) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (player.restDaysUsed.includes(todayStr) || player.lastWorkoutDate === todayStr) return;
+
+    const updatedPlayer = {
+      ...player,
+      restTokens: player.restTokens - 1,
+      restDaysUsed: [...(player.restDaysUsed || []), todayStr]
+    };
+    setPlayer(updatedPlayer);
+    await saveGame(updatedPlayer);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  // --- UPDATED STREAK LOGIC: Rest Shields prevent resets ---
+  const getRealtimeStreak = () => {
+    if (!player?.lastWorkoutDate) return 0;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+
+    const activeToday = player.lastWorkoutDate === todayStr || player.restDaysUsed.includes(todayStr);
+    const activeYesterday = player.lastWorkoutDate === yesterdayStr || player.restDaysUsed.includes(yesterdayStr);
+
+    if (activeToday || activeYesterday) return player.currentStreak || 0;
+    return 0; 
+  };
+
+  const currentRealtimeStreak = getRealtimeStreak();
+  const isMultiplierActive = currentRealtimeStreak >= 3;
+
+  const isDayActive = (date: Date) => {
+    if (!player?.lastWorkoutDate || currentRealtimeStreak === 0) return false;
+    const dTime = new Date(date).setHours(0,0,0,0);
+    const [y, m, d] = player.lastWorkoutDate.split('-');
+    const lastWorkoutTime = new Date(Number(y), Number(m) - 1, Number(d)).setHours(0,0,0,0);
+    const diffInDays = (lastWorkoutTime - dTime) / (1000 * 60 * 60 * 24);
+    return diffInDays >= 0 && diffInDays < currentRealtimeStreak;
+  };
+
+  const isRestDay = (date: Date) => {
+    const dStr = date.toISOString().split('T')[0];
+    return player.restDaysUsed.includes(dStr);
+  };
+
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
       const fetchSave = async () => {
-        const savedData = await loadGame();
+        let savedData = await loadGame();
+        savedData = checkTokenRefill(savedData); // Refill check on focus
         
         if (isActive) {
-          // --- STAGE 2: THE INTERCEPTOR ---
-          // If the player hasn't built their character, hijack the navigation
           if (!savedData.hasCompletedOnboarding) {
             router.replace('/onboarding');
-            return; // Stop rendering the Hub entirely
+            return; 
           }
-
           if (savedData.level > player.level && isLoaded) {
              setLeveledUpTo(savedData.level);
              setShowLevelUp(true);
@@ -90,7 +167,6 @@ export default function HubScreen() {
   const requiredXP = getRequiredXp(player.level);
   const xpPercentage = Math.min((player.totalXp / requiredXP) * 100, 100);
 
-  // If intercepting or loading, show nothing but the void
   if (!isLoaded) return <View style={styles.loadingContainer} />;
 
   const rankInfo = getRankDetails(player.level);
@@ -108,10 +184,8 @@ export default function HubScreen() {
           </View>
           <View style={styles.headerText}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {/* DYNAMIC: Now reads your actual chosen name from the hard drive */}
               <Text style={styles.username}>{player.playerName}</Text>
-              
-              {player.currentStreak >= 3 && (
+              {isMultiplierActive && (
                 <View style={styles.globalMultiplierBadge}>
                   <Ionicons name="flame" size={14} color="#09090b" />
                   <Text style={styles.globalMultiplierText}>1.2x XP</Text>
@@ -132,6 +206,24 @@ export default function HubScreen() {
           </View>
         </View>
 
+        {/* REST INVENTORY CARD */}
+        <View style={styles.restCard}>
+          <View style={styles.restHeader}>
+            <View>
+              <Text style={styles.restTitle}>REST SHIELDS</Text>
+              <Text style={styles.restSubtext}>{player.restTokens} CHARGES REMAINING</Text>
+            </View>
+            <Ionicons name="shield-checkmark" size={32} color={player.restTokens > 0 ? "#3b82f6" : "#3f3f46"} />
+          </View>
+          <TouchableOpacity 
+            style={[styles.useTokenButton, player.restTokens <= 0 && { opacity: 0.5 }]}
+            onPress={useRestShield}
+            disabled={player.restTokens <= 0}
+          >
+            <Text style={styles.useTokenText}>ACTIVATE 24H STREAK PROTECTOR</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.missionCard}>
             <Text style={styles.missionTitle}>Current Objective</Text>
             <Text style={styles.missionName}>Push Day Alpha</Text>
@@ -146,7 +238,7 @@ export default function HubScreen() {
               return (
                 <View key={badge.id} style={[styles.badgeContainer, !isUnlocked && styles.badgeLocked]}>
                   <View style={[styles.badgeIconWrapper, isUnlocked ? { backgroundColor: badge.color + '20', borderColor: badge.color } : styles.badgeIconLocked]}>
-                    <Ionicons name={badge.icon} size={32} color={isUnlocked ? badge.color : '#3f3f46'} />
+                    <Ionicons name={badge.icon as any} size={32} color={isUnlocked ? badge.color : '#3f3f46'} />
                   </View>
                   <Text style={[styles.badgeName, !isUnlocked && styles.badgeNameLocked]} numberOfLines={1}>{badge.name}</Text>
                   <Text style={styles.badgeDesc} numberOfLines={2}>{isUnlocked ? badge.description : 'Locked'}</Text>
@@ -158,21 +250,35 @@ export default function HubScreen() {
 
         <View style={styles.streakCard}>
           <View style={styles.streakHeaderRow}>
-            <Text style={styles.sectionTitle}>SYSTEM UPTIME</Text>
-            <Text style={styles.streakCountText}>{player.currentStreak} DAY STREAK</Text>
+            <Text style={styles.sectionTitleWithoutMargin}>SYSTEM UPTIME</Text>
+            <Text style={[styles.streakCountText, { color: currentRealtimeStreak > 0 ? '#10b981' : '#71717a' }]}>
+              {currentRealtimeStreak} DAY STREAK
+            </Text>
           </View>
+          
           <View style={styles.weekRow}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => {
-              const isActive = (6 - index) < player.currentStreak;
+            {weekDates.map((date, index) => {
+              const active = isDayActive(date);
+              const resting = isRestDay(date);
               return (
-                <View key={index} style={[styles.dayNode, isActive && styles.dayNodeActive]}>
-                  <Text style={[styles.dayText, isActive && styles.dayTextActive]}>{day}</Text>
+                <View key={index} style={[
+                    styles.dayNode, 
+                    active && styles.dayNodeActive,
+                    resting && styles.dayNodeResting
+                ]}>
+                  <Text style={[
+                      styles.dayText, 
+                      active && styles.dayTextActive,
+                      resting && styles.dayTextResting
+                  ]}>{WEEK_DAYS[index]}</Text>
                 </View>
               );
             })}
           </View>
+          
           <Text style={styles.streakSubtext}>
-            {player.currentStreak >= 3 ? "Global 1.2x XP Multiplier is ACTIVE. Do not break the chain." : "Reach a 3-day streak to unlock the Global XP Multiplier."}
+            Global 1.2x XP Multiplier is {isMultiplierActive ? 'ACTIVE' : 'INACTIVE'}. 
+            {isMultiplierActive ? ' Do not break the chain.' : ' Hit 3 days to ignite.'}
           </Text>
         </View>
 
@@ -185,15 +291,13 @@ export default function HubScreen() {
             <Text style={styles.sectionTitleWithoutMargin}>COMBAT ATTRIBUTES</Text>
             <Ionicons name="scan-outline" size={20} color="#71717a" />
           </View>
-          
           <StatBar iconName="barbell" current={player.str || 10} max={strMax} color="#ef4444" />
           <StatBar iconName="heart-half" current={player.end || 10} max={endMax} color="#3b82f6" />
           <StatBar iconName="layers" current={player.lifetimeVolume || 0} max={volMax} color="#10b981" />
-          <StatBar iconName="flame" current={player.currentStreak || 0} max={30} color="#eab308" />
+          <StatBar iconName="flame" current={currentRealtimeStreak} max={30} color="#eab308" />
         </TouchableOpacity>
         
         <View style={{ height: 40 }} />
-
       </ScrollView>
 
       <Modal visible={showAttributesModal} transparent={true} animationType="slide">
@@ -203,19 +307,16 @@ export default function HubScreen() {
               <Text style={styles.modalTitleText}>CHARACTER SHEET</Text>
               <Ionicons name="analytics" size={24} color="#10b981" />
             </View>
-
             <DetailedStatBar label="STRENGTH" current={player.str || 10} max={strMax} color="#ef4444" />
             <DetailedStatBar label="ENDURANCE" current={player.end || 10} max={endMax} color="#3b82f6" />
             <DetailedStatBar label="LIFETIME VOLUME" current={player.lifetimeVolume || 0} max={volMax} color="#10b981" />
-            <DetailedStatBar label="CONSISTENCY" current={player.currentStreak || 0} max={30} color="#eab308" />
-
+            <DetailedStatBar label="CONSISTENCY" current={currentRealtimeStreak} max={30} color="#eab308" />
             <TouchableOpacity style={styles.closeModalButton} onPress={() => setShowAttributesModal(false)}>
               <Text style={styles.closeModalText}>CLOSE DATABANK</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
       <LevelUpModal isVisible={showLevelUp} newLevel={leveledUpTo} onClose={() => setShowLevelUp(false)} />
     </SafeAreaView>
   );
@@ -238,6 +339,15 @@ const styles = StyleSheet.create({
   xpText: { color: '#a1a1aa', fontSize: 14, fontWeight: '500', fontFamily: 'monospace' },
   xpBarBackground: { height: 12, backgroundColor: '#27272a', borderRadius: 6, overflow: 'hidden' },
   xpBarFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 6 }, 
+  
+  // REST CARD STYLES
+  restCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
+  restHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  restTitle: { color: '#71717a', fontSize: 12, letterSpacing: 3, fontWeight: 'bold', fontFamily: 'monospace' },
+  restSubtext: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 4 },
+  useTokenButton: { backgroundColor: '#1e1b4b', paddingVertical: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#3b82f6' },
+  useTokenText: { color: '#3b82f6', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+
   missionCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 30, borderWidth: 1, borderColor: '#27272a', borderLeftWidth: 4, borderLeftColor: '#10b981' },
   missionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
   missionName: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
@@ -250,15 +360,19 @@ const styles = StyleSheet.create({
   badgeName: { color: 'white', fontSize: 14, fontWeight: 'bold', fontFamily: 'CyberpunkFont', textAlign: 'center', marginBottom: 4 },
   badgeNameLocked: { color: '#71717a' },
   badgeDesc: { color: '#a1a1aa', fontSize: 10, textAlign: 'center', lineHeight: 14 },
+  
   streakCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
   streakHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  streakCountText: { color: '#10b981', fontSize: 16, fontWeight: 'bold', fontFamily: 'CyberpunkFont' },
+  streakCountText: { fontSize: 16, fontWeight: 'bold', fontFamily: 'CyberpunkFont' },
   weekRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  dayNode: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#27272a', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#3f3f46' },
+  dayNode: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#111113', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#3f3f46' },
   dayNodeActive: { backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10b981', shadowColor: '#10b981', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 5 },
+  dayNodeResting: { backgroundColor: 'rgba(59, 130, 246, 0.15)', borderColor: '#3b82f6', shadowColor: '#3b82f6', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 8, elevation: 5 },
   dayText: { color: '#71717a', fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace' },
   dayTextActive: { color: '#10b981' },
+  dayTextResting: { color: '#3b82f6' },
   streakSubtext: { color: '#a1a1aa', fontSize: 12, fontStyle: 'italic', textAlign: 'center' },
+  
   attributesCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 10, borderWidth: 1, borderColor: '#27272a' },
   sectionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20, fontFamily: 'monospace', fontWeight: 'bold' },
   sectionTitleWithoutMargin: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace', fontWeight: 'bold' },
