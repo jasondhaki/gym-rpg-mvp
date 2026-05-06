@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 
 // Data & Storage Imports
 import { QUESTS, EXERCISES, BADGES } from '../../src/data/codex';
+// FIXED: PlayerData imported from storage only
 import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
 
 export default function ExerciseDetailScreen() {
@@ -18,8 +19,74 @@ export default function ExerciseDetailScreen() {
   const quest = QUESTS.find(q => q.id === questId);
   const GOAL = 5; 
 
+  // --- SET TRACKING STATE ---
+  const MAX_SETS = 3;
+  const [setsCompleted, setSetsCompleted] = useState(0);
+  const setProgressBar = useRef(new Animated.Value(0)).current;
+
+  // --- REST TIMER STATE ---
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const timerGlow = useRef(new Animated.Value(0)).current;
+
+  // Animate the progress bar when a set is completed
+  useEffect(() => {
+    Animated.timing(setProgressBar, {
+      toValue: setsCompleted / MAX_SETS,
+      duration: 400,
+      useNativeDriver: false,
+    }).start();
+  }, [setsCompleted]);
+
+  // Timer Logic with Haptic Ticks
+  useEffect(() => {
+    let interval: any; // Using 'any' to prevent NodeJS.Timeout vs number conflict
+    if (isTimerActive && timeLeft !== null && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(prev => (prev !== null ? prev - 1 : null));
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      handleTimerComplete();
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerActive, timeLeft]);
+
+  const startTimer = (seconds: number) => {
+    setTimeLeft(seconds);
+    setIsTimerActive(true);
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(timerGlow, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(timerGlow, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ])
+    ).start();
+  };
+
+  const handleTimerComplete = async () => {
+    setIsTimerActive(false);
+    setTimeLeft(null);
+    timerGlow.setValue(0);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  };
+
+  // --- LOGIC: HANDLE INDIVIDUAL SET COMPLETION ---
+  const handleCompleteSet = () => {
+    if (setsCompleted < MAX_SETS) {
+      const nextSet = setsCompleted + 1;
+      setSetsCompleted(nextSet);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Automatically start a rest timer after Set 1 and 2
+      if (nextSet < MAX_SETS) {
+        startTimer(60); 
+      }
+    }
+  };
+
   const handleSyncProgress = async () => {
-    // 1. Tactical Haptic Confirmation
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
     if (!quest) {
@@ -28,28 +95,25 @@ export default function ExerciseDetailScreen() {
     }
 
     const player = await loadGame();
-    const today = new Date().toISOString().split('T')[0];
+    
+    // FIXED: Using Local Time (en-CA) to match storage.ts daily reset logic
+    const today = new Date().toLocaleDateString('en-CA'); 
+    
     const currentQuestId = Array.isArray(questId) ? questId[0] : (questId || "unknown_quest");
 
-    // --- 2. THE REWARD GATE: CHECK ELIGIBILITY FIRST ---
+    // Check progress eligibility for the current day
     const previousCount = (player.lastWorkoutDate === today && player.completedToday?.[currentQuestId])
       ? player.completedToday[currentQuestId].length
       : 0;
 
     const isEligibleForRewards = previousCount < GOAL;
 
-    // --- 3. SESSION TRACKING ---
-    let questMap = player.lastWorkoutDate === today ? { ...player.completedToday } : {};
-    
-    if (!questMap[currentQuestId]) {
-      questMap[currentQuestId] = [];
-    }
-    
-    if (!questMap[currentQuestId].includes(exerciseId)) {
-      questMap[currentQuestId].push(exerciseId);
-    }
+    // Update the quest map for the category progress bar
+    let questMap = { ...player.completedToday };
+    if (!questMap[currentQuestId]) questMap[currentQuestId] = [];
+    if (!questMap[currentQuestId].includes(exerciseId)) questMap[currentQuestId].push(exerciseId);
 
-    // Initialize state with current values
+    // Initialize state clones for math
     let newLevel = player.level || 1;
     let newTotalXp = player.totalXp || 0;
     let newStr = player.str || 10;
@@ -57,43 +121,33 @@ export default function ExerciseDetailScreen() {
     let newStreak = player.currentStreak || 0;
     let newLifetimeVolume = player.lifetimeVolume || 0;
 
-    // --- 4. CONDITIONAL REWARD LOGIC ---
     if (isEligibleForRewards) {
-      // XP Logic
       const baseUnitXp = (1000 * quest.xpMultiplier) / 10;
       
-      // Streak Calculation
+      // Local Time Streak Calculation
       if (player.lastWorkoutDate !== today) {
-        const yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const yesterdayString = yesterdayDate.toISOString().split('T')[0];
-        newStreak = (player.lastWorkoutDate === yesterdayString) ? (player.currentStreak || 0) + 1 : 1;
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+        newStreak = (player.lastWorkoutDate === yesterdayStr) ? (player.currentStreak || 0) + 1 : 1;
       }
 
       const streakBonus = newStreak >= 3 ? 1.2 : 1.0;
       const finalXpEarned = Math.floor(baseUnitXp * streakBonus);
       
-      // Level-Up Engine
       newTotalXp += finalXpEarned;
       const getRequiredXp = (lvl: number) => Math.floor(500 * Math.pow(lvl, 1.5));
-
       while (newTotalXp >= getRequiredXp(newLevel)) {
         newTotalXp -= getRequiredXp(newLevel);
         newLevel++;
       }
 
-      // Attribute & VOLUME Growth
-      // We add 50kg of "Virtual Volume" per exercise to enable the 1-Ton Club badge logic
       newLifetimeVolume += 50;
 
-      if (quest.attributeFocus === 'STR') {
-        newStr += 0.5; 
-      } else if (quest.attributeFocus === 'END') {
-        newEnd += 0.5; 
-      }
+      if (quest.attributeFocus === 'STR') newStr += 0.5; 
+      else if (quest.attributeFocus === 'END') newEnd += 0.5; 
     }
 
-    // --- 5. THE ACHIEVEMENT INTERCEPTOR ---
     const potentialState = {
       ...player,
       level: newLevel,
@@ -104,32 +158,27 @@ export default function ExerciseDetailScreen() {
       end: Number(newEnd.toFixed(1)),
     };
 
+    // --- FIXED BADGE LOGIC (Handles numeric and array fields) ---
     const newlyUnlockedBadges: string[] = [];
     const currentUnlocked = player.unlockedBadges || [];
 
     BADGES.forEach((badge) => {
       if (!currentUnlocked.includes(badge.id)) {
-        let currentValue = 0;
+        const val = potentialState[badge.requirement.field as keyof typeof potentialState];
+        // If it's an array (like restDaysUsed), we compare the length
+        const compareValue = Array.isArray(val) ? val.length : (val as number);
 
-        if (badge.requirement.field === 'restDaysUsed') {
-          currentValue = player.restDaysUsed?.length || 0;
-        } else {
-          // @ts-ignore - Dynamic field access for numeric requirements
-          currentValue = potentialState[badge.requirement.field] as number;
-        }
-
-        if (currentValue >= badge.requirement.value) {
+        if (compareValue >= badge.requirement.value) {
           newlyUnlockedBadges.push(badge.id);
         }
       }
     });
 
-    // Notify user of badge achievement
     if (newlyUnlockedBadges.length > 0) {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     }
 
-    // --- 6. PERSIST TO STORAGE ---
+    // PERSIST TO STORAGE
     await saveGame({
       ...potentialState,
       lastWorkoutDate: today,
@@ -140,13 +189,9 @@ export default function ExerciseDetailScreen() {
     router.back();
   };
 
-  if (!exercise) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Text style={{ color: 'white', textAlign: 'center', marginTop: 50 }}>INTEL CORRUPTED: Exercise Not Found</Text>
-      </SafeAreaView>
-    );
-  }
+  if (!exercise) return <SafeAreaView style={styles.container}><Text style={{ color: 'white' }}>Exercise Not Found</Text></SafeAreaView>;
+
+  const isFinalStep = setsCompleted === MAX_SETS;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -156,7 +201,7 @@ export default function ExerciseDetailScreen() {
         </TouchableOpacity>
         <View>
           <Text style={styles.headerTitle}>EXERCISE INTEL</Text>
-          <Text style={styles.headerSubtitle}>PARENT_QUEST: {quest?.title.toUpperCase() || 'UNKNOWN'}</Text>
+          <Text style={styles.headerSubtitle}>{quest?.title.toUpperCase() || 'UNKNOWN'}</Text>
         </View>
         <View style={{ width: 44 }} /> 
       </View>
@@ -171,15 +216,45 @@ export default function ExerciseDetailScreen() {
         <View style={styles.infoSection}>
           <Text style={styles.title}>{exercise.name}</Text>
           
-          <View style={styles.tagRow}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>{exercise.muscleGroup.toUpperCase()}</Text>
+          {/* SET PROGRESS BAR */}
+          <View style={styles.setTrackerContainer}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="layers-outline" size={14} color="#71717a" />
+              <Text style={[styles.sectionLabel, { color: '#71717a' }]}>SET PROGRESS</Text>
+              <Text style={styles.setCountText}>{setsCompleted} / {MAX_SETS}</Text>
             </View>
-            <View style={[styles.tag, { borderColor: quest?.color || '#10b981' }]}>
-              <Text style={[styles.tagText, { color: quest?.color || '#10b981' }]}>
-                {exercise.subTarget?.toUpperCase() || 'GENERAL'}
-              </Text>
+            <View style={styles.progressBarTrack}>
+              <Animated.View style={[
+                styles.progressBarFill, 
+                { 
+                  width: setProgressBar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
+                  backgroundColor: quest?.color || '#10b981' 
+                }
+              ]} />
             </View>
+          </View>
+
+          {/* REST TIMERS */}
+          <View style={styles.timerSection}>
+            <View style={styles.sectionHeaderRow}>
+              <Ionicons name="hourglass-outline" size={16} color="#71717a" />
+              <Text style={[styles.sectionLabel, { color: '#71717a' }]}>REST TIMERS</Text>
+            </View>
+            
+            {timeLeft !== null ? (
+              <Animated.View style={[styles.activeTimerBox, { opacity: timerGlow.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }]}>
+                <Text style={styles.timerCountdown}>{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</Text>
+                <TouchableOpacity onPress={() => setTimeLeft(null)} style={styles.abortButton}><Text style={styles.abortText}>ABORT</Text></TouchableOpacity>
+              </Animated.View>
+            ) : (
+              <View style={styles.timerOptions}>
+                {[60, 90, 120].map((sec) => (
+                  <TouchableOpacity key={sec} style={styles.timerBtn} onPress={() => startTimer(sec)}>
+                    <Text style={styles.timerBtnText}>{sec}S</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
 
           <View style={styles.divider} />
@@ -189,27 +264,27 @@ export default function ExerciseDetailScreen() {
             <Text style={[styles.sectionLabel, { color: quest?.color || '#10b981' }]}>EXECUTION PROTOCOL</Text>
           </View>
 
-          {exercise.instructions && exercise.instructions.length > 0 ? (
-            exercise.instructions.map((step, index) => (
-              <View key={index} style={styles.stepRow}>
-                <View style={[styles.stepNumberCircle, { backgroundColor: (quest?.color || '#10b981') + '40' }]}>
-                  <Text style={[styles.stepNumber, { color: quest?.color || '#10b981' }]}>{index + 1}</Text>
-                </View>
-                <Text style={styles.stepText}>{step}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.missingInfoText}>No instructions found in Codex.</Text>
-          )}
+          {exercise.instructions.map((step, index) => (
+            <View key={index} style={styles.stepRow}>
+              <View style={[styles.stepNumberCircle, { backgroundColor: (quest?.color || '#10b981') + '40' }]}><Text style={[styles.stepNumber, { color: quest?.color || '#10b981' }]}>{index + 1}</Text></View>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
         </View>
       </ScrollView>
 
+      {/* DYNAMIC ACTION BUTTON */}
       <TouchableOpacity 
-        style={[styles.doneButton, { backgroundColor: quest?.color === '#ffffff' ? '#ffffff' : (quest?.color || '#10b981') }]} 
-        onPress={handleSyncProgress}
-        activeOpacity={0.8}
+        style={[
+          styles.doneButton, 
+          { backgroundColor: isFinalStep ? (quest?.color === '#ffffff' ? '#ffffff' : (quest?.color || '#10b981')) : '#18181b' },
+          !isFinalStep && { borderWidth: 1, borderColor: quest?.color || '#10b981' }
+        ]} 
+        onPress={isFinalStep ? handleSyncProgress : handleCompleteSet}
       >
-        <Text style={styles.doneButtonText}>SYNC & DISMISS</Text>
+        <Text style={[styles.doneButtonText, !isFinalStep && { color: quest?.color || '#10b981' }]}>
+          {isFinalStep ? 'SYNC & DISMISS' : `COMPLETE SET ${setsCompleted + 1}`}
+        </Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -218,11 +293,11 @@ export default function ExerciseDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#09090b' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10 },
-  headerTitle: { color: '#71717a', fontSize: 10, letterSpacing: 4, fontFamily: 'SpaceMono', textAlign: 'center' },
-  headerSubtitle: { color: '#3f3f46', fontSize: 8, letterSpacing: 1, fontFamily: 'SpaceMono', textAlign: 'center' },
+  headerTitle: { color: '#71717a', fontSize: 10, letterSpacing: 4, fontFamily: 'monospace', textAlign: 'center' },
+  headerSubtitle: { color: '#3f3f46', fontSize: 8, letterSpacing: 1, fontFamily: 'monospace', textAlign: 'center' },
   closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  scrollContent: { paddingBottom: 120 },
-  imageBox: { width: '90%', aspectRatio: 1, alignSelf: 'center', backgroundColor: '#111113', borderRadius: 24, padding: 30, marginVertical: 20, borderWidth: 1, borderColor: '#18181b', position: 'relative' },
+  scrollContent: { paddingBottom: 150 },
+  imageBox: { width: '90%', aspectRatio: 1, alignSelf: 'center', backgroundColor: '#111113', borderRadius: 24, padding: 30, marginVertical: 20, borderWidth: 1, borderColor: '#18181b' },
   image: { width: '100%', height: '100%' },
   cornerTopLeft: { position: 'absolute', top: -1, left: -1, width: 20, height: 20, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 24 },
   cornerBottomRight: { position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 24 },
@@ -230,15 +305,29 @@ const styles = StyleSheet.create({
   title: { color: 'white', fontSize: 28, fontWeight: 'bold', fontFamily: 'CyberpunkFont', marginBottom: 15 },
   tagRow: { flexDirection: 'row', gap: 10, marginBottom: 25 },
   tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#27272a', backgroundColor: '#18181b' },
-  tagText: { color: '#a1a1aa', fontSize: 10, fontWeight: 'bold', fontFamily: 'SpaceMono' },
+  tagText: { color: '#a1a1aa', fontSize: 10, fontWeight: 'bold', fontFamily: 'monospace' },
+  
+  setTrackerContainer: { marginBottom: 25 },
+  setCountText: { color: 'white', fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace', marginLeft: 'auto' },
+  progressBarTrack: { height: 8, backgroundColor: '#18181b', borderRadius: 4, marginTop: 10, borderWidth: 1, borderColor: '#27272a', overflow: 'hidden' },
+  progressBarFill: { height: '100%', borderRadius: 4 },
+
+  timerSection: { marginBottom: 25, backgroundColor: '#111113', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#18181b' },
+  timerOptions: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  timerBtn: { flex: 1, paddingVertical: 10, backgroundColor: '#18181b', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
+  timerBtnText: { color: '#71717a', fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace' },
+  activeTimerBox: { marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 10 },
+  timerCountdown: { color: '#fbbf24', fontSize: 32, fontWeight: 'bold', fontFamily: 'monospace' },
+  abortButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, borderWidth: 1, borderColor: '#ef4444' },
+  abortText: { color: '#ef4444', fontSize: 10, fontWeight: 'bold' },
+
   divider: { height: 1, backgroundColor: '#18181b', marginBottom: 25 },
-  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 8 },
-  sectionLabel: { fontSize: 12, letterSpacing: 2, fontWeight: 'bold', fontFamily: 'SpaceMono' },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 8 },
+  sectionLabel: { fontSize: 11, letterSpacing: 2, fontWeight: 'bold', fontFamily: 'monospace' },
   stepRow: { flexDirection: 'row', marginBottom: 20, alignItems: 'flex-start' },
-  stepNumberCircle: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 15, marginTop: 2 },
-  stepNumber: { fontSize: 12, fontWeight: 'bold', fontFamily: 'SpaceMono' },
-  stepText: { color: '#a1a1aa', fontSize: 15, lineHeight: 22, flex: 1 },
-  missingInfoText: { color: '#3f3f46', fontStyle: 'italic', fontFamily: 'SpaceMono' },
+  stepNumberCircle: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', marginRight: 15 },
+  stepNumber: { fontSize: 11, fontWeight: 'bold' },
+  stepText: { color: '#a1a1aa', fontSize: 14, lineHeight: 20, flex: 1 },
   doneButton: { position: 'absolute', bottom: 30, left: 25, right: 25, paddingVertical: 20, borderRadius: 16, alignItems: 'center', elevation: 5 },
-  doneButtonText: { color: 'black', fontSize: 16, fontWeight: 'bold', letterSpacing: 2, fontFamily: 'CyberpunkFont' }
+  doneButtonText: { fontSize: 16, fontWeight: 'bold', letterSpacing: 2, fontFamily: 'CyberpunkFont' }
 });

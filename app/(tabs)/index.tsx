@@ -78,22 +78,37 @@ export default function HubScreen() {
     setWeekDates(week);
   }, []);
 
-  // --- REST TOKEN REFILL LOGIC ---
-  const checkTokenRefill = (data: PlayerData) => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const thisMondayStr = new Date(today.setDate(diff)).toISOString().split('T')[0];
+  // --- SYSTEM MAINTENANCE ENGINE (ADJUSTED FOR LOCAL TIME) ---
+  const performSystemMaintenance = (data: PlayerData) => {
+    const today = new Date().toLocaleDateString('en-CA'); 
+    let isModified = false;
+    let syncedData = { ...data };
 
-    if (data.lastTokenResetDate !== thisMondayStr) {
-      return { ...data, restTokens: 3, lastTokenResetDate: thisMondayStr };
+    // 1. Weekly Shield Refill Logic (Local Monday Check)
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const mondayDate = new Date(now.setDate(diff));
+    const currentMondayStr = mondayDate.toLocaleDateString('en-CA');
+
+    if (syncedData.lastTokenResetDate !== currentMondayStr) {
+      syncedData.restTokens = 3;
+      syncedData.lastTokenResetDate = currentMondayStr;
+      isModified = true;
     }
-    return data;
+
+    // 2. Daily Sync Check
+    if (syncedData.lastWorkoutDate !== today && Object.keys(syncedData.completedToday || {}).length > 0) {
+      syncedData.completedToday = {};
+      isModified = true;
+    }
+
+    return { isModified, syncedData };
   };
 
   const useRestShield = async () => {
     if (player.restTokens <= 0) return;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA');
     if (player.restDaysUsed.includes(todayStr) || player.lastWorkoutDate === todayStr) return;
 
     const updatedPlayer = {
@@ -106,13 +121,13 @@ export default function HubScreen() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  // --- UPDATED STREAK LOGIC: Rest Shields prevent resets ---
+  // --- UPDATED STREAK LOGIC (LOCAL TIME) ---
   const getRealtimeStreak = () => {
     if (!player?.lastWorkoutDate) return 0;
-    const todayStr = new Date().toISOString().split('T')[0];
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
     const activeToday = player.lastWorkoutDate === todayStr || player.restDaysUsed.includes(todayStr);
     const activeYesterday = player.lastWorkoutDate === yesterdayStr || player.restDaysUsed.includes(yesterdayStr);
@@ -126,15 +141,20 @@ export default function HubScreen() {
 
   const isDayActive = (date: Date) => {
     if (!player?.lastWorkoutDate || currentRealtimeStreak === 0) return false;
-    const dTime = new Date(date).setHours(0,0,0,0);
-    const [y, m, d] = player.lastWorkoutDate.split('-');
-    const lastWorkoutTime = new Date(Number(y), Number(m) - 1, Number(d)).setHours(0,0,0,0);
-    const diffInDays = (lastWorkoutTime - dTime) / (1000 * 60 * 60 * 24);
+    const dStr = date.toLocaleDateString('en-CA');
+    // Using string comparison for accuracy across timezones
+    const [ly, lm, ld] = player.lastWorkoutDate.split('-');
+    const [cy, cm, cd] = dStr.split('-');
+    
+    const lastWorkoutTime = new Date(Number(ly), Number(lm) - 1, Number(ld)).getTime();
+    const currentCheckTime = new Date(Number(cy), Number(cm) - 1, Number(cd)).getTime();
+    
+    const diffInDays = (lastWorkoutTime - currentCheckTime) / (1000 * 60 * 60 * 24);
     return diffInDays >= 0 && diffInDays < currentRealtimeStreak;
   };
 
   const isRestDay = (date: Date) => {
-    const dStr = date.toISOString().split('T')[0];
+    const dStr = date.toLocaleDateString('en-CA');
     return player.restDaysUsed.includes(dStr);
   };
 
@@ -142,19 +162,25 @@ export default function HubScreen() {
     useCallback(() => {
       let isActive = true;
       const fetchSave = async () => {
-        let savedData = await loadGame();
-        savedData = checkTokenRefill(savedData); // Refill check on focus
+        const savedData = await loadGame();
+        
+        // Trigger maintenance on boot/focus
+        const { isModified, syncedData } = performSystemMaintenance(savedData);
+        
+        if (isModified) {
+          await saveGame(syncedData);
+        }
         
         if (isActive) {
-          if (!savedData.hasCompletedOnboarding) {
+          if (!syncedData.hasCompletedOnboarding) {
             router.replace('/onboarding');
             return; 
           }
-          if (savedData.level > player.level && isLoaded) {
-             setLeveledUpTo(savedData.level);
+          if (syncedData.level > player.level && isLoaded) {
+             setLeveledUpTo(syncedData.level);
              setShowLevelUp(true);
           }
-          setPlayer(savedData);
+          setPlayer(syncedData);
           setIsLoaded(true);
         }
       };
@@ -206,7 +232,6 @@ export default function HubScreen() {
           </View>
         </View>
 
-        {/* REST INVENTORY CARD */}
         <View style={styles.restCard}>
           <View style={styles.restHeader}>
             <View>
@@ -339,15 +364,12 @@ const styles = StyleSheet.create({
   xpText: { color: '#a1a1aa', fontSize: 14, fontWeight: '500', fontFamily: 'monospace' },
   xpBarBackground: { height: 12, backgroundColor: '#27272a', borderRadius: 6, overflow: 'hidden' },
   xpBarFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 6 }, 
-  
-  // REST CARD STYLES
   restCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
   restHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   restTitle: { color: '#71717a', fontSize: 12, letterSpacing: 3, fontWeight: 'bold', fontFamily: 'monospace' },
   restSubtext: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 4 },
   useTokenButton: { backgroundColor: '#1e1b4b', paddingVertical: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#3b82f6' },
   useTokenText: { color: '#3b82f6', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-
   missionCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 30, borderWidth: 1, borderColor: '#27272a', borderLeftWidth: 4, borderLeftColor: '#10b981' },
   missionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
   missionName: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
@@ -360,7 +382,6 @@ const styles = StyleSheet.create({
   badgeName: { color: 'white', fontSize: 14, fontWeight: 'bold', fontFamily: 'CyberpunkFont', textAlign: 'center', marginBottom: 4 },
   badgeNameLocked: { color: '#71717a' },
   badgeDesc: { color: '#a1a1aa', fontSize: 10, textAlign: 'center', lineHeight: 14 },
-  
   streakCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
   streakHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   streakCountText: { fontSize: 16, fontWeight: 'bold', fontFamily: 'CyberpunkFont' },
@@ -372,7 +393,6 @@ const styles = StyleSheet.create({
   dayTextActive: { color: '#10b981' },
   dayTextResting: { color: '#3b82f6' },
   streakSubtext: { color: '#a1a1aa', fontSize: 12, fontStyle: 'italic', textAlign: 'center' },
-  
   attributesCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 10, borderWidth: 1, borderColor: '#27272a' },
   sectionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 20, fontFamily: 'monospace', fontWeight: 'bold' },
   sectionTitleWithoutMargin: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, fontFamily: 'monospace', fontWeight: 'bold' },

@@ -14,18 +14,19 @@ export interface PlayerData {
   pushQuestsCompleted: number;
   
   // --- SESSION TRACKING ---
+  // Key = questId, Value = array of exerciseIds completed
   completedToday: Record<string, string[]>; 
 
-  // --- NEW: REST SHIELD SYSTEM ---
-  restTokens: number; // Current available shields (0-3)
-  lastTokenResetDate: string | null; // Tracks the last Monday refill
-  restDaysUsed: string[]; // History of dates where a shield was consumed
+  // --- REST SHIELD SYSTEM ---
+  restTokens: number; 
+  lastTokenResetDate: string | null; 
+  restDaysUsed: string[]; 
 
   // --- BIOMETRIC & IDENTITY DATA ---
   hasCompletedOnboarding: boolean;
   playerName: string;
-  weight: number; // in kg
-  height: number; // in cm
+  weight: number; 
+  height: number; 
   age: number;
   targetArchetype: 'Aesthetic' | 'Juggernaut' | 'Athlete' | null;
 }
@@ -42,12 +43,10 @@ const DEFAULT_STATS: PlayerData = {
   pushQuestsCompleted: 0,
   completedToday: {}, 
 
-  // Rest System Defaults
   restTokens: 3,
   lastTokenResetDate: null,
   restDaysUsed: [],
 
-  // User Identity
   hasCompletedOnboarding: false,
   playerName: 'Jason Dhaki', 
   weight: 70,
@@ -69,20 +68,28 @@ export const loadGame = async (): Promise<PlayerData> => {
   try {
     const jsonValue = await AsyncStorage.getItem(SAVE_SLOT);
     
+    // FIXED: Use local date (en-CA forces YYYY-MM-DD format) 
+    // to ensure the refresh happens at local midnight.
+    const today = new Date().toLocaleDateString('en-CA'); 
+    
     if (jsonValue != null) {
-      const parsedData = JSON.parse(jsonValue);
+      let parsedData = JSON.parse(jsonValue);
       
-      // --- DATA MIGRATION PATCH ---
-      // 1. Convert old array-based session tracking to object-based
+      // --- 1. DATA MIGRATION PATCHES ---
       if (Array.isArray(parsedData.completedToday)) {
         parsedData.completedToday = {};
       }
 
-      // 2. Initialize Rest Shield fields for existing players
       if (parsedData.restTokens === undefined) {
         parsedData.restTokens = 3;
         parsedData.restDaysUsed = [];
         parsedData.lastTokenResetDate = null;
+      }
+
+      // --- 2. THE DAILY REFRESH ENGINE ---
+      // If the last activity was not today (local time), wipe the counters.
+      if (parsedData.lastWorkoutDate !== today) {
+        parsedData.completedToday = {};
       }
 
       // Merge defaults to ensure no property is ever undefined
