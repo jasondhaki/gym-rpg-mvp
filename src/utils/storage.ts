@@ -12,8 +12,13 @@ export interface PlayerData {
   end: number;
   unlockedBadges: string[];
   pushQuestsCompleted: number;
+  
+  // --- NEW: ISOLATED SESSION TRACKING ---
+  // A dictionary where Keys = questId, Values = array of exerciseIds
+  // Example: { "push_day_alpha": ["ch_1", "sh_2"], "leg_day_reckoning": ["lg_5"] }
+  completedToday: Record<string, string[]>; 
 
-  // --- NEW: BIOMETRIC & IDENTITY DATA ---
+  // --- BIOMETRIC & IDENTITY DATA ---
   hasCompletedOnboarding: boolean;
   playerName: string;
   weight: number; // in kg
@@ -30,8 +35,9 @@ const DEFAULT_STATS: PlayerData = {
   lastWorkoutDate: null,
   str: 10,
   end: 10,
-  unlockedBadges: [], // Starts empty
+  unlockedBadges: [], 
   pushQuestsCompleted: 0,
+  completedToday: {}, // Initialize as an empty object (dictionary)
 
   // Defaults for a brand new save
   hasCompletedOnboarding: false,
@@ -57,9 +63,15 @@ export const loadGame = async (): Promise<PlayerData> => {
     
     if (jsonValue != null) {
       const parsedData = JSON.parse(jsonValue);
-      // BACKWARD COMPATIBILITY PATCH: 
-      // Merges the default stats with the loaded stats.
-      // If the old save file is missing 'currentStreak', it safely defaults to 0.
+      
+      // --- DATA MIGRATION PATCH ---
+      // If the user's save file still has the old flat array (from the previous version),
+      // we must wipe it and convert it to an object so the app doesn't crash on quest filtering.
+      if (Array.isArray(parsedData.completedToday)) {
+        parsedData.completedToday = {};
+      }
+
+      // Merge defaults to catch any completely missing fields
       return { ...DEFAULT_STATS, ...parsedData };
     }
     
