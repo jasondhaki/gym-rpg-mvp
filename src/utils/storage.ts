@@ -17,6 +17,11 @@ export interface PlayerData {
   // Key = questId, Value = array of exerciseIds completed
   completedToday: Record<string, string[]>; 
 
+  // --- NEW: ACTIVE SESSION TRACKING ---
+  // Tracks sets for exercises currently being performed (prevents progress loss on exit)
+  // Key = exerciseId, Value = setsCompleted
+  activeSession: Record<string, number>; 
+
   // --- REST SHIELD SYSTEM ---
   restTokens: number; 
   lastTokenResetDate: string | null; 
@@ -42,6 +47,7 @@ const DEFAULT_STATS: PlayerData = {
   unlockedBadges: [], 
   pushQuestsCompleted: 0,
   completedToday: {}, 
+  activeSession: {}, // Default empty state
 
   restTokens: 3,
   lastTokenResetDate: null,
@@ -68,8 +74,7 @@ export const loadGame = async (): Promise<PlayerData> => {
   try {
     const jsonValue = await AsyncStorage.getItem(SAVE_SLOT);
     
-    // FIXED: Use local date (en-CA forces YYYY-MM-DD format) 
-    // to ensure the refresh happens at local midnight.
+    // FIXED: Use local date for Bangladesh/Local Time consistency
     const today = new Date().toLocaleDateString('en-CA'); 
     
     if (jsonValue != null) {
@@ -86,10 +91,16 @@ export const loadGame = async (): Promise<PlayerData> => {
         parsedData.lastTokenResetDate = null;
       }
 
+      // Ensure activeSession exists for older save files
+      if (!parsedData.activeSession) {
+        parsedData.activeSession = {};
+      }
+
       // --- 2. THE DAILY REFRESH ENGINE ---
-      // If the last activity was not today (local time), wipe the counters.
+      // If a new day has started, we clear both completed quests AND mid-workout sets.
       if (parsedData.lastWorkoutDate !== today) {
         parsedData.completedToday = {};
+        parsedData.activeSession = {}; 
       }
 
       // Merge defaults to ensure no property is ever undefined

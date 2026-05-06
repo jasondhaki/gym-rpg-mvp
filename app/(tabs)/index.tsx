@@ -48,11 +48,26 @@ export default function HubScreen() {
   const router = useRouter(); 
 
   const [player, setPlayer] = useState<PlayerData>({ 
-    level: 1, totalXp: 0, lifetimeVolume: 0, currentStreak: 0, lastWorkoutDate: null,
-    str: 10, end: 10, unlockedBadges: [], pushQuestsCompleted: 0,
+    level: 1, 
+    totalXp: 0, 
+    lifetimeVolume: 0, 
+    currentStreak: 0, 
+    lastWorkoutDate: null,
+    str: 10, 
+    end: 10, 
+    unlockedBadges: [], 
+    pushQuestsCompleted: 0,
     completedToday: {},
-    restTokens: 3, lastTokenResetDate: null, restDaysUsed: [],
-    hasCompletedOnboarding: false, playerName: 'Initiate', weight: 70, height: 175, age: 20, targetArchetype: null
+    activeSession: {}, // <--- ADD THIS LINE TO FIX THE ERROR
+    restTokens: 3, 
+    lastTokenResetDate: null, 
+    restDaysUsed: [],
+    hasCompletedOnboarding: false, 
+    playerName: 'Initiate', 
+    weight: 70, 
+    height: 175, 
+    age: 20, 
+    targetArchetype: null
   });
   
   const [isLoaded, setIsLoaded] = useState(false);

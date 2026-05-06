@@ -7,7 +7,6 @@ import * as Haptics from 'expo-haptics';
 
 // Data & Storage Imports
 import { QUESTS, EXERCISES, BADGES } from '../../src/data/codex';
-// FIXED: PlayerData imported from storage only
 import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
 
 export default function ExerciseDetailScreen() {
@@ -17,30 +16,57 @@ export default function ExerciseDetailScreen() {
   const exerciseId = Array.isArray(id) ? id[0] : id;
   const exercise = EXERCISES.find(ex => ex.id === exerciseId);
   const quest = QUESTS.find(q => q.id === questId);
+  
+  const MAX_SETS = 3;
   const GOAL = 5; 
 
-  // --- SET TRACKING STATE ---
-  const MAX_SETS = 3;
+  // --- STATE ---
   const [setsCompleted, setSetsCompleted] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false); 
   const setProgressBar = useRef(new Animated.Value(0)).current;
 
-  // --- REST TIMER STATE ---
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const timerGlow = useRef(new Animated.Value(0)).current;
 
-  // Animate the progress bar when a set is completed
+  // 1. RECOVERY ENGINE: Load mid-workout progress from AsyncStorage on mount
   useEffect(() => {
+    const recoverSession = async () => {
+      const player = await loadGame();
+      // Access the scratchpad to see if sets were already done for this exercise
+      const savedSets = player.activeSession?.[exerciseId as string] || 0;
+      
+      setSetsCompleted(savedSets);
+      setProgressBar.setValue(savedSets / MAX_SETS); // Instant placement on load
+      setIsLoaded(true);
+    };
+    recoverSession();
+  }, [exerciseId]);
+
+  // 2. PERSISTENCE OBSERVER: Animate bar and save mid-workout count to disk
+  useEffect(() => {
+    if (!isLoaded) return;
+
     Animated.timing(setProgressBar, {
       toValue: setsCompleted / MAX_SETS,
       duration: 400,
       useNativeDriver: false,
     }).start();
-  }, [setsCompleted]);
 
-  // Timer Logic with Haptic Ticks
+    const persistMidWorkout = async () => {
+      const player = await loadGame();
+      const updatedActiveSession = { 
+        ...player.activeSession, 
+        [exerciseId as string]: setsCompleted 
+      };
+      await saveGame({ ...player, activeSession: updatedActiveSession });
+    };
+    persistMidWorkout();
+  }, [setsCompleted, isLoaded]);
+
+  // 3. TIMER ENGINE
   useEffect(() => {
-    let interval: any; // Using 'any' to prevent NodeJS.Timeout vs number conflict
+    let interval: any; // Fix for NodeJS.Timeout conflict
     if (isTimerActive && timeLeft !== null && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => (prev !== null ? prev - 1 : null));
@@ -49,9 +75,7 @@ export default function ExerciseDetailScreen() {
     } else if (timeLeft === 0) {
       handleTimerComplete();
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [isTimerActive, timeLeft]);
 
   const startTimer = (seconds: number) => {
@@ -72,48 +96,34 @@ export default function ExerciseDetailScreen() {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   };
 
-  // --- LOGIC: HANDLE INDIVIDUAL SET COMPLETION ---
   const handleCompleteSet = () => {
     if (setsCompleted < MAX_SETS) {
       const nextSet = setsCompleted + 1;
       setSetsCompleted(nextSet);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-      // Automatically start a rest timer after Set 1 and 2
-      if (nextSet < MAX_SETS) {
-        startTimer(60); 
-      }
+      if (nextSet < MAX_SETS) startTimer(60); 
     }
   };
 
   const handleSyncProgress = async () => {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    if (!quest) {
-      router.back();
-      return;
-    }
+    if (!quest) { router.back(); return; }
 
     const player = await loadGame();
-    
-    // FIXED: Using Local Time (en-CA) to match storage.ts daily reset logic
+    // Dhaka Local Time Standardization
     const today = new Date().toLocaleDateString('en-CA'); 
-    
-    const currentQuestId = Array.isArray(questId) ? questId[0] : (questId || "unknown_quest");
+    const currentQuestId = Array.isArray(questId) ? questId[0] : questId;
 
-    // Check progress eligibility for the current day
-    const previousCount = (player.lastWorkoutDate === today && player.completedToday?.[currentQuestId])
-      ? player.completedToday[currentQuestId].length
-      : 0;
-
+    const previousCount = (player.lastWorkoutDate === today && player.completedToday?.[currentQuestId as string])
+      ? player.completedToday[currentQuestId as string].length : 0;
     const isEligibleForRewards = previousCount < GOAL;
 
-    // Update the quest map for the category progress bar
     let questMap = { ...player.completedToday };
-    if (!questMap[currentQuestId]) questMap[currentQuestId] = [];
-    if (!questMap[currentQuestId].includes(exerciseId)) questMap[currentQuestId].push(exerciseId);
+    if (!questMap[currentQuestId as string]) questMap[currentQuestId as string] = [];
+    if (!questMap[currentQuestId as string].includes(exerciseId as string)) {
+      questMap[currentQuestId as string].push(exerciseId as string);
+    }
 
-    // Initialize state clones for math
     let newLevel = player.level || 1;
     let newTotalXp = player.totalXp || 0;
     let newStr = player.str || 10;
@@ -123,30 +133,26 @@ export default function ExerciseDetailScreen() {
 
     if (isEligibleForRewards) {
       const baseUnitXp = (1000 * quest.xpMultiplier) / 10;
-      
-      // Local Time Streak Calculation
       if (player.lastWorkoutDate !== today) {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toLocaleDateString('en-CA');
         newStreak = (player.lastWorkoutDate === yesterdayStr) ? (player.currentStreak || 0) + 1 : 1;
       }
-
-      const streakBonus = newStreak >= 3 ? 1.2 : 1.0;
-      const finalXpEarned = Math.floor(baseUnitXp * streakBonus);
-      
-      newTotalXp += finalXpEarned;
+      newTotalXp += Math.floor(baseUnitXp * (newStreak >= 3 ? 1.2 : 1.0));
       const getRequiredXp = (lvl: number) => Math.floor(500 * Math.pow(lvl, 1.5));
       while (newTotalXp >= getRequiredXp(newLevel)) {
         newTotalXp -= getRequiredXp(newLevel);
         newLevel++;
       }
-
       newLifetimeVolume += 50;
-
       if (quest.attributeFocus === 'STR') newStr += 0.5; 
       else if (quest.attributeFocus === 'END') newEnd += 0.5; 
     }
+
+    // --- CLEANUP: Purge this exercise from Active Sessions once synced ---
+    const updatedActiveSession = { ...player.activeSession };
+    delete updatedActiveSession[exerciseId as string];
 
     const potentialState = {
       ...player,
@@ -156,29 +162,22 @@ export default function ExerciseDetailScreen() {
       lifetimeVolume: newLifetimeVolume,
       str: Number(newStr.toFixed(1)),
       end: Number(newEnd.toFixed(1)),
+      activeSession: updatedActiveSession,
     };
 
-    // --- FIXED BADGE LOGIC (Handles numeric and array fields) ---
+    // Corrected Badge comparison logic (Array length vs Numeric)
     const newlyUnlockedBadges: string[] = [];
     const currentUnlocked = player.unlockedBadges || [];
-
     BADGES.forEach((badge) => {
       if (!currentUnlocked.includes(badge.id)) {
         const val = potentialState[badge.requirement.field as keyof typeof potentialState];
-        // If it's an array (like restDaysUsed), we compare the length
         const compareValue = Array.isArray(val) ? val.length : (val as number);
-
-        if (compareValue >= badge.requirement.value) {
-          newlyUnlockedBadges.push(badge.id);
-        }
+        if (compareValue >= badge.requirement.value) newlyUnlockedBadges.push(badge.id);
       }
     });
 
-    if (newlyUnlockedBadges.length > 0) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    }
+    if (newlyUnlockedBadges.length > 0) await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
 
-    // PERSIST TO STORAGE
     await saveGame({
       ...potentialState,
       lastWorkoutDate: today,
@@ -189,20 +188,23 @@ export default function ExerciseDetailScreen() {
     router.back();
   };
 
-  if (!exercise) return <SafeAreaView style={styles.container}><Text style={{ color: 'white' }}>Exercise Not Found</Text></SafeAreaView>;
+  if (!exercise || !isLoaded) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingBox}>
+          <Text style={styles.loadingText}>SYNCHRONIZING...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   const isFinalStep = setsCompleted === MAX_SETS;
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.closeButton}>
-          <Ionicons name="chevron-down" size={32} color="white" />
-        </TouchableOpacity>
-        <View>
-          <Text style={styles.headerTitle}>EXERCISE INTEL</Text>
-          <Text style={styles.headerSubtitle}>{quest?.title.toUpperCase() || 'UNKNOWN'}</Text>
-        </View>
+        <TouchableOpacity onPress={() => router.back()}><Ionicons name="chevron-down" size={32} color="white" /></TouchableOpacity>
+        <View><Text style={styles.headerTitle}>EXERCISE INTEL</Text><Text style={styles.headerSubtitle}>{quest?.title.toUpperCase()}</Text></View>
         <View style={{ width: 44 }} /> 
       </View>
 
@@ -216,7 +218,6 @@ export default function ExerciseDetailScreen() {
         <View style={styles.infoSection}>
           <Text style={styles.title}>{exercise.name}</Text>
           
-          {/* SET PROGRESS BAR */}
           <View style={styles.setTrackerContainer}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="layers-outline" size={14} color="#71717a" />
@@ -226,21 +227,16 @@ export default function ExerciseDetailScreen() {
             <View style={styles.progressBarTrack}>
               <Animated.View style={[
                 styles.progressBarFill, 
-                { 
-                  width: setProgressBar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }),
-                  backgroundColor: quest?.color || '#10b981' 
-                }
+                { width: setProgressBar.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }), backgroundColor: quest?.color || '#10b981' }
               ]} />
             </View>
           </View>
 
-          {/* REST TIMERS */}
           <View style={styles.timerSection}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="hourglass-outline" size={16} color="#71717a" />
               <Text style={[styles.sectionLabel, { color: '#71717a' }]}>REST TIMERS</Text>
             </View>
-            
             {timeLeft !== null ? (
               <Animated.View style={[styles.activeTimerBox, { opacity: timerGlow.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }]}>
                 <Text style={styles.timerCountdown}>{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</Text>
@@ -258,7 +254,6 @@ export default function ExerciseDetailScreen() {
           </View>
 
           <View style={styles.divider} />
-
           <View style={styles.sectionHeaderRow}>
             <Ionicons name="construct-outline" size={18} color={quest?.color || '#10b981'} />
             <Text style={[styles.sectionLabel, { color: quest?.color || '#10b981' }]}>EXECUTION PROTOCOL</Text>
@@ -273,7 +268,6 @@ export default function ExerciseDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* DYNAMIC ACTION BUTTON */}
       <TouchableOpacity 
         style={[
           styles.doneButton, 
@@ -292,10 +286,11 @@ export default function ExerciseDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#09090b' },
+  loadingBox: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { color: '#71717a', fontSize: 10, letterSpacing: 4, fontFamily: 'monospace' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 10 },
   headerTitle: { color: '#71717a', fontSize: 10, letterSpacing: 4, fontFamily: 'monospace', textAlign: 'center' },
   headerSubtitle: { color: '#3f3f46', fontSize: 8, letterSpacing: 1, fontFamily: 'monospace', textAlign: 'center' },
-  closeButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   scrollContent: { paddingBottom: 150 },
   imageBox: { width: '90%', aspectRatio: 1, alignSelf: 'center', backgroundColor: '#111113', borderRadius: 24, padding: 30, marginVertical: 20, borderWidth: 1, borderColor: '#18181b' },
   image: { width: '100%', height: '100%' },
@@ -303,15 +298,10 @@ const styles = StyleSheet.create({
   cornerBottomRight: { position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 24 },
   infoSection: { paddingHorizontal: 25 },
   title: { color: 'white', fontSize: 28, fontWeight: 'bold', fontFamily: 'CyberpunkFont', marginBottom: 15 },
-  tagRow: { flexDirection: 'row', gap: 10, marginBottom: 25 },
-  tag: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: '#27272a', backgroundColor: '#18181b' },
-  tagText: { color: '#a1a1aa', fontSize: 10, fontWeight: 'bold', fontFamily: 'monospace' },
-  
   setTrackerContainer: { marginBottom: 25 },
   setCountText: { color: 'white', fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace', marginLeft: 'auto' },
   progressBarTrack: { height: 8, backgroundColor: '#18181b', borderRadius: 4, marginTop: 10, borderWidth: 1, borderColor: '#27272a', overflow: 'hidden' },
   progressBarFill: { height: '100%', borderRadius: 4 },
-
   timerSection: { marginBottom: 25, backgroundColor: '#111113', padding: 15, borderRadius: 12, borderWidth: 1, borderColor: '#18181b' },
   timerOptions: { flexDirection: 'row', gap: 10, marginTop: 10 },
   timerBtn: { flex: 1, paddingVertical: 10, backgroundColor: '#18181b', borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
@@ -320,7 +310,6 @@ const styles = StyleSheet.create({
   timerCountdown: { color: '#fbbf24', fontSize: 32, fontWeight: 'bold', fontFamily: 'monospace' },
   abortButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 4, borderWidth: 1, borderColor: '#ef4444' },
   abortText: { color: '#ef4444', fontSize: 10, fontWeight: 'bold' },
-
   divider: { height: 1, backgroundColor: '#18181b', marginBottom: 25 },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, gap: 8 },
   sectionLabel: { fontSize: 11, letterSpacing: 2, fontWeight: 'bold', fontFamily: 'monospace' },
