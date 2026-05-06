@@ -5,8 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { QUESTS, EXERCISES } from '../../src/data/codex';
-import { loadGame, saveGame } from '../../src/utils/storage';
+// Data & Storage Imports
+import { QUESTS, EXERCISES, BADGES } from '../../src/data/codex';
+import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
 
 export default function ExerciseDetailScreen() {
   const { id, questId } = useLocalSearchParams();
@@ -31,15 +32,13 @@ export default function ExerciseDetailScreen() {
     const currentQuestId = Array.isArray(questId) ? questId[0] : (questId || "unknown_quest");
 
     // --- 2. THE REWARD GATE: CHECK ELIGIBILITY FIRST ---
-    // We check the CLEAN player object from storage to see the count before this sync
     const previousCount = (player.lastWorkoutDate === today && player.completedToday?.[currentQuestId])
       ? player.completedToday[currentQuestId].length
       : 0;
 
     const isEligibleForRewards = previousCount < GOAL;
 
-    // --- 3. UPDATE SESSION TRACKING (Always happens) ---
-    // Create a shallow copy to prevent pass-by-reference logic bugs
+    // --- 3. SESSION TRACKING ---
     let questMap = player.lastWorkoutDate === today ? { ...player.completedToday } : {};
     
     if (!questMap[currentQuestId]) {
@@ -56,10 +55,11 @@ export default function ExerciseDetailScreen() {
     let newStr = player.str || 10;
     let newEnd = player.end || 10;
     let newStreak = player.currentStreak || 0;
+    let newLifetimeVolume = player.lifetimeVolume || 0;
 
     // --- 4. CONDITIONAL REWARD LOGIC ---
     if (isEligibleForRewards) {
-      // MICRO-BOUNTY MATH (10% of total quest bounty)
+      // XP Logic
       const baseUnitXp = (1000 * quest.xpMultiplier) / 10;
       
       // Streak Calculation
@@ -67,15 +67,13 @@ export default function ExerciseDetailScreen() {
         const yesterdayDate = new Date();
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
         const yesterdayString = yesterdayDate.toISOString().split('T')[0];
-        
-        // Increment streak if yesterday was worked, otherwise reset to 1
         newStreak = (player.lastWorkoutDate === yesterdayString) ? (player.currentStreak || 0) + 1 : 1;
       }
 
       const streakBonus = newStreak >= 3 ? 1.2 : 1.0;
       const finalXpEarned = Math.floor(baseUnitXp * streakBonus);
       
-      // XP & LEVEL ENGINE
+      // Level-Up Engine
       newTotalXp += finalXpEarned;
       const getRequiredXp = (lvl: number) => Math.floor(500 * Math.pow(lvl, 1.5));
 
@@ -84,7 +82,10 @@ export default function ExerciseDetailScreen() {
         newLevel++;
       }
 
-      // ATTRIBUTE GROWTH
+      // Attribute & VOLUME Growth
+      // We add 50kg of "Virtual Volume" per exercise to enable the 1-Ton Club badge logic
+      newLifetimeVolume += 50;
+
       if (quest.attributeFocus === 'STR') {
         newStr += 0.5; 
       } else if (quest.attributeFocus === 'END') {
@@ -92,16 +93,48 @@ export default function ExerciseDetailScreen() {
       }
     }
 
-    // --- 5. PERSIST TO STORAGE ---
-    await saveGame({
+    // --- 5. THE ACHIEVEMENT INTERCEPTOR ---
+    const potentialState = {
       ...player,
       level: newLevel,
       totalXp: newTotalXp,
       currentStreak: newStreak,
-      lastWorkoutDate: today,
-      completedToday: questMap, // Always save the updated map
-      str: Number(newStr.toFixed(1)), 
+      lifetimeVolume: newLifetimeVolume,
+      str: Number(newStr.toFixed(1)),
       end: Number(newEnd.toFixed(1)),
+    };
+
+    const newlyUnlockedBadges: string[] = [];
+    const currentUnlocked = player.unlockedBadges || [];
+
+    BADGES.forEach((badge) => {
+      if (!currentUnlocked.includes(badge.id)) {
+        let currentValue = 0;
+
+        if (badge.requirement.field === 'restDaysUsed') {
+          currentValue = player.restDaysUsed?.length || 0;
+        } else {
+          // @ts-ignore - Dynamic field access for numeric requirements
+          currentValue = potentialState[badge.requirement.field] as number;
+        }
+
+        if (currentValue >= badge.requirement.value) {
+          newlyUnlockedBadges.push(badge.id);
+        }
+      }
+    });
+
+    // Notify user of badge achievement
+    if (newlyUnlockedBadges.length > 0) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    }
+
+    // --- 6. PERSIST TO STORAGE ---
+    await saveGame({
+      ...potentialState,
+      lastWorkoutDate: today,
+      completedToday: questMap,
+      unlockedBadges: [...currentUnlocked, ...newlyUnlockedBadges],
     });
     
     router.back();

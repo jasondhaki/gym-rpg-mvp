@@ -1,3 +1,5 @@
+// src/data/codex.ts
+
 // 1. Define the Data Structures
 export interface Exercise {
   id: string;
@@ -5,7 +7,7 @@ export interface Exercise {
   muscleGroup: 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Biceps' | 'Triceps' | 'Abs';
   subTarget: string;      
   instructions: string[]; 
-  imagePath: any;        
+  imagePath: any;         
 }
 
 export interface Quest {
@@ -26,6 +28,11 @@ export interface Badge {
   description: string;
   icon: any; 
   color: string;
+  // NEW: The Logic Gate for the Achievement Engine
+  requirement: {
+    field: 'str' | 'end' | 'level' | 'currentStreak' | 'lifetimeVolume' | 'restDaysUsed';
+    value: number;
+  };
 }
 
 // 2. The Complete 140-Exercise Bank
@@ -293,7 +300,6 @@ export const EXERCISES: Exercise[] = [
   },
 
   // --- BACK (20) ---
-
   { 
     id: 'bk_1', 
     name: 'Pull-Ups', 
@@ -556,7 +562,6 @@ export const EXERCISES: Exercise[] = [
   },
 
   // --- LEGS (20) ---
-
   { 
     id: 'lg_1', 
     name: 'Back Squat', 
@@ -819,7 +824,6 @@ export const EXERCISES: Exercise[] = [
   },
 
   // --- SHOULDERS (20) ---
-
   { 
     id: 'sh_1', 
     name: 'Barbell OHP', 
@@ -1082,7 +1086,6 @@ export const EXERCISES: Exercise[] = [
   },
 
   // --- BICEPS (20) ---
-
   { 
     id: 'bi_1', 
     name: 'Barbell Curls', 
@@ -1345,7 +1348,6 @@ export const EXERCISES: Exercise[] = [
   },
 
   // --- TRICEPS (20) ---
-
   { 
     id: 'tri_1', 
     name: 'Rope Pushdowns', 
@@ -1608,7 +1610,6 @@ export const EXERCISES: Exercise[] = [
   },
 
   // --- ABS (20) ---
-
   { 
     id: 'ab_1', 
     name: 'Crunches', 
@@ -1985,9 +1986,54 @@ export const QUESTS: Quest[] = [
   }
 ];
 
-// 4. Achievement System
+// 4. ACHIEVEMENT ENGINE: Updated with Logic-Gated Requirements
 export const BADGES: Badge[] = [
-  { id: 'one_ton_club', name: '1-Ton Club', description: 'Move 1,000kg of iron in a single session.', icon: 'barbell', color: '#fbbf24' },
-  { id: 'iron_vanguard', name: 'Iron Vanguard', description: 'Complete 10 Push Day operations.', icon: 'shield-checkmark', color: '#60a5fa' },
-  { id: 'consistency_king', name: 'Relentless', description: 'Achieve a 7-day streak.', icon: 'flame', color: '#ef4444' }
+  {
+    id: 'first_step',
+    name: 'Initial Uptime',
+    description: 'Complete your first ever operation.',
+    icon: 'power-outline',
+    color: '#a1a1aa',
+    requirement: { field: 'level', value: 2 }
+  },
+  {
+    id: 'streak_7',
+    name: 'Weekly Legend',
+    description: 'Maintain a 7-day system uptime.',
+    icon: 'calendar-outline',
+    color: '#10b981',
+    requirement: { field: 'currentStreak', value: 7 }
+  },
+  {
+    id: 'str_50',
+    name: 'Heavy Metal',
+    description: 'Reach 50 points in the Strength attribute.',
+    icon: 'barbell-outline',
+    color: '#ef4444',
+    requirement: { field: 'str', value: 50 }
+  },
+  {
+    id: 'ton_club',
+    name: '1-Ton Club',
+    description: 'Move a total of 1,000kg in lifetime volume.',
+    icon: 'trophy-outline',
+    color: '#fbbf24',
+    requirement: { field: 'lifetimeVolume', value: 1000 }
+  },
+  {
+    id: 'stamina_50',
+    name: 'Stamina Protocol',
+    description: 'Reach 50 points in the Endurance attribute.',
+    icon: 'heart-outline',
+    color: '#3b82f6',
+    requirement: { field: 'end', value: 50 }
+  },
+  {
+    id: 'tactician',
+    name: 'Tactical Rest',
+    description: 'Deploy 10 Rest Shields to protect your uptime.',
+    icon: 'shield-checkmark-outline',
+    color: '#60a5fa',
+    requirement: { field: 'restDaysUsed', value: 10 }
+  }
 ];
