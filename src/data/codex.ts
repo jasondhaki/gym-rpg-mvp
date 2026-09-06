@@ -903,7 +903,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar back to your chest with control, keeping your elbows slightly forward'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/OverheadPress.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_2', 
@@ -917,7 +917,7 @@ export const EXERCISES: Exercise[] = [
       'Slowly lower the dumbbells back to the starting position at ear level'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/OverheadPress.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_3', 
@@ -931,7 +931,7 @@ export const EXERCISES: Exercise[] = [
       'Keep the movement fluid and avoid letting the weights drop too quickly'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/OverheadPress.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_4', 
@@ -945,7 +945,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar slowly to your chest to catch the weight before the next rep'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/OverheadPress.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_5', 
@@ -959,7 +959,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the handles slowly until you feel a stretch in your shoulders'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/OverheadPress.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_6', 
@@ -973,7 +973,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar back to your shoulder with control'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/OverheadPress.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_7', 
@@ -987,7 +987,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the weights slowly, stopping just before they touch your thighs'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/LateralRaises.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_8', 
@@ -1001,7 +1001,7 @@ export const EXERCISES: Exercise[] = [
       'Control the weight as the cable pulls your arm back across your body'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/LateralRaises.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_9', 
@@ -1015,7 +1015,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the weight slowly, utilizing the increased range of motion from the lean'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/LateralRaises.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_10', 
@@ -1029,7 +1029,7 @@ export const EXERCISES: Exercise[] = [
       'Slowly return to the start position without letting the weight stack crash'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/LateralRaises.png') 
+    imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
     id: 'sh_11', 
@@ -1467,7 +1467,7 @@ export const EXERCISES: Exercise[] = [
       'Slowly return the rope to chest height, keeping your upper arms stationary'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/TricepPushdown.png') 
+    imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
     id: 'tri_2', 
@@ -1481,7 +1481,7 @@ export const EXERCISES: Exercise[] = [
       'Control the ascent, stopping when your forearms are just above parallel to the floor'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/TricepPushdown.png') 
+    imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
     id: 'tri_3', 
@@ -1495,7 +1495,7 @@ export const EXERCISES: Exercise[] = [
       'Maintain a slight forward lean to allow for a full range of motion'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/TricepPushdown.png') 
+    imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
     id: 'tri_4', 
@@ -1509,7 +1509,7 @@ export const EXERCISES: Exercise[] = [
       'Switch arms and repeat, ensuring equal intensity on both sides'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/TricepPushdown.png') 
+    imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
     id: 'tri_5', 
@@ -1523,7 +1523,7 @@ export const EXERCISES: Exercise[] = [
       'Slowly lower the rope back behind your head to feel a deep stretch in the long head'
     ], 
     attributeFocus: 'END',
-    imagePath: require('../../assets/images/TricepPushdown.png') 
+    imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
     id: 'tri_6', 
@@ -1565,7 +1565,7 @@ export const EXERCISES: Exercise[] = [
       'Extend your arms back to the starting position using only your triceps'
     ], 
     attributeFocus: 'STR',
-    imagePath: require('../../assets/images/Skullcrushers.png') 
+    imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
     id: 'tri_9', 
