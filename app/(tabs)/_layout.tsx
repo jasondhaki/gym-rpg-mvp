@@ -36,13 +36,6 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Ionicons name="barbell-sharp" size={24} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Rankings',
-          tabBarIcon: ({ color }) => <Ionicons name="trophy-sharp" size={24} color={color} />,
-        }}
-      />
     </Tabs>
   );
 }
