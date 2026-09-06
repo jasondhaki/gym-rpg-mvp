@@ -7,7 +7,7 @@ import * as Haptics from 'expo-haptics';
 
 // Data & Storage Imports
 import { QUESTS, EXERCISES, BADGES } from '../../src/data/codex';
-import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
+import { loadGame, saveGame } from '../../src/utils/storage';
 
 export default function ExerciseDetailScreen() {
   const { id, questId } = useLocalSearchParams();

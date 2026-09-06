@@ -1,19 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // 1. Import the expanded Master Codex and the Quest interface
 import { QUESTS, Quest } from '../../src/data/codex';
 import { loadGame } from '../../src/utils/storage';
 
+const QUEST_GOAL = 5;
+
 export default function QuestBoardScreen() {
   const router = useRouter();
-  const [completedToday, setCompletedToday] = useState<string[]>([]);
+  const [completedToday, setCompletedToday] = useState<Record<string, string[]>>({});
+
+  // Re-sync completion state from the save file every time this tab gains focus
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const syncCompletion = async () => {
+        const player = await loadGame();
+        const today = new Date().toLocaleDateString('en-CA');
+        const questMap = player.lastWorkoutDate === today ? (player.completedToday || {}) : {};
+        if (isActive) setCompletedToday(questMap);
+      };
+      syncCompletion();
+      return () => { isActive = false; };
+    }, [])
+  );
 
   // 2. The Symmetry Engine: Typing the array as a Union of Quest or Ghost object
   const displayCards: (Quest | { isGhost: boolean; id: string })[] = [...QUESTS];
-  
+
   if (displayCards.length % 2 !== 0) {
     displayCards.push({ isGhost: true, id: 'filler-ghost' });
   }
@@ -47,7 +64,7 @@ export default function QuestBoardScreen() {
 
             // Because of the guard above, TypeScript now knows 'item' IS a Quest
             const quest = item;
-            const isCleared = completedToday.includes(quest.id);
+            const isCleared = (completedToday[quest.id]?.length || 0) >= QUEST_GOAL;
 
             return (
               <TouchableOpacity 

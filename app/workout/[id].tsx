@@ -6,7 +6,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { QUESTS, EXERCISES, Exercise } from '../../src/data/codex';
-import { loadGame, PlayerData } from '../../src/utils/storage';
+import { loadGame } from '../../src/utils/storage';
 
 export default function ActionChamberScreen() {
   const { id } = useLocalSearchParams();

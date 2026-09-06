@@ -20,14 +20,18 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [appReady, setAppReady] = useState(false);
 
-  const [fontsLoaded] = useFonts({
-    'CyberpunkFont': BlackOpsOne_400Regular, 
+  const [fontsLoaded, fontError] = useFonts({
+    'CyberpunkFont': BlackOpsOne_400Regular,
     'SpaceMono': SpaceMono_400Regular,
   });
 
+  // Fonts are "settled" once they've either loaded or definitively failed —
+  // without this, a font load failure would leave the splash screen up forever
+  const fontsSettled = fontsLoaded || !!fontError;
+
   useEffect(() => {
-    // 1. Kill the native "slide" immediately once fonts are ready
-    if (fontsLoaded) {
+    // 1. Kill the native "slide" immediately once fonts are settled
+    if (fontsSettled) {
       SplashScreen.hideAsync();
     }
 
@@ -35,12 +39,12 @@ export default function RootLayout() {
     const timer = setTimeout(() => {
       setAppReady(true);
     }, 2500);
-    
+
     return () => clearTimeout(timer);
-  }, [fontsLoaded]);
+  }, [fontsSettled]);
 
   // 3. Show your CustomSplash (Loading Screen) while the timer runs
-  if (!fontsLoaded || !appReady) {
+  if (!fontsSettled || !appReady) {
     return <CustomSplash />;
   }
 

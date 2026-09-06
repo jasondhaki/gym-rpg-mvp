@@ -1,5 +1,5 @@
 // src/utils/achievements.ts
-import { Badge, BADGES } from '../data/codex';
+import { BADGES } from '../data/codex';
 import { PlayerData } from './storage';
 
 export const checkForNewBadges = (player: PlayerData): string[] => {
