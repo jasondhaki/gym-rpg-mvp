@@ -48,26 +48,11 @@ export default function HubScreen() {
   const router = useRouter(); 
 
   const [player, setPlayer] = useState<PlayerData>({ 
-    level: 1, 
-    totalXp: 0, 
-    lifetimeVolume: 0, 
-    currentStreak: 0, 
-    lastWorkoutDate: null,
-    str: 10, 
-    end: 10, 
-    unlockedBadges: [], 
-    pushQuestsCompleted: 0,
-    completedToday: {},
-    activeSession: {}, // <--- ADD THIS LINE TO FIX THE ERROR
-    restTokens: 3, 
-    lastTokenResetDate: null, 
-    restDaysUsed: [],
-    hasCompletedOnboarding: false, 
-    playerName: 'Initiate', 
-    weight: 70, 
-    height: 175, 
-    age: 20, 
-    targetArchetype: null
+    level: 1, totalXp: 0, lifetimeVolume: 0, currentStreak: 0, lastWorkoutDate: null,
+    str: 10, end: 10, unlockedBadges: [], pushQuestsCompleted: 0,
+    completedToday: {}, activeSession: {}, 
+    restTokens: 3, lastTokenResetDate: null, restDaysUsed: [],
+    hasCompletedOnboarding: false, playerName: 'Jason Dhaki', weight: 70, height: 175, age: 20, targetArchetype: null
   });
   
   const [isLoaded, setIsLoaded] = useState(false);
@@ -79,10 +64,10 @@ export default function HubScreen() {
   const [weekDates, setWeekDates] = useState<Date[]>([]);
 
   useEffect(() => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-    const diffToMonday = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const monday = new Date(today.setDate(diffToMonday));
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const monday = new Date(new Date().setDate(diffToMonday));
     monday.setHours(0,0,0,0); 
     const week = [];
     for (let i = 0; i < 7; i++) {
@@ -93,18 +78,15 @@ export default function HubScreen() {
     setWeekDates(week);
   }, []);
 
-  // --- SYSTEM MAINTENANCE ENGINE (ADJUSTED FOR LOCAL TIME) ---
   const performSystemMaintenance = (data: PlayerData) => {
     const today = new Date().toLocaleDateString('en-CA'); 
     let isModified = false;
     let syncedData = { ...data };
 
-    // 1. Weekly Shield Refill Logic (Local Monday Check)
     const now = new Date();
     const dayOfWeek = now.getDay();
     const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-    const mondayDate = new Date(now.setDate(diff));
-    const currentMondayStr = mondayDate.toLocaleDateString('en-CA');
+    const currentMondayStr = new Date(now.setDate(diff)).toLocaleDateString('en-CA');
 
     if (syncedData.lastTokenResetDate !== currentMondayStr) {
       syncedData.restTokens = 3;
@@ -112,31 +94,43 @@ export default function HubScreen() {
       isModified = true;
     }
 
-    // 2. Daily Sync Check
     if (syncedData.lastWorkoutDate !== today && Object.keys(syncedData.completedToday || {}).length > 0) {
       syncedData.completedToday = {};
+      syncedData.activeSession = {}; 
       isModified = true;
     }
 
     return { isModified, syncedData };
   };
 
+  // --- CORE FIX: ATOMIC REST SHIELD ACTION ---
   const useRestShield = async () => {
-    if (player.restTokens <= 0) return;
+    const currentSave = await loadGame(); // Reload to prevent race conditions
     const todayStr = new Date().toLocaleDateString('en-CA');
-    if (player.restDaysUsed.includes(todayStr) || player.lastWorkoutDate === todayStr) return;
+    
+    if (currentSave.restTokens <= 0) {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+    
+    const isAlreadyShielded = (currentSave.restDaysUsed || []).includes(todayStr);
+    if (isAlreadyShielded) {
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+    }
 
-    const updatedPlayer = {
-      ...player,
-      restTokens: player.restTokens - 1,
-      restDaysUsed: [...(player.restDaysUsed || []), todayStr]
+    const updatedPlayer: PlayerData = {
+      ...currentSave,
+      restTokens: currentSave.restTokens - 1,
+      restDaysUsed: [...(currentSave.restDaysUsed || []), todayStr]
     };
+
     setPlayer(updatedPlayer);
     await saveGame(updatedPlayer);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  // --- UPDATED STREAK LOGIC (LOCAL TIME) ---
+  // --- CORE FIX: STREAK PROTECTION MATH ---
   const getRealtimeStreak = () => {
     if (!player?.lastWorkoutDate) return 0;
     const todayStr = new Date().toLocaleDateString('en-CA');
@@ -144,8 +138,8 @@ export default function HubScreen() {
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString('en-CA');
 
-    const activeToday = player.lastWorkoutDate === todayStr || player.restDaysUsed.includes(todayStr);
-    const activeYesterday = player.lastWorkoutDate === yesterdayStr || player.restDaysUsed.includes(yesterdayStr);
+    const activeToday = player.lastWorkoutDate === todayStr || (player.restDaysUsed || []).includes(todayStr);
+    const activeYesterday = player.lastWorkoutDate === yesterdayStr || (player.restDaysUsed || []).includes(yesterdayStr);
 
     if (activeToday || activeYesterday) return player.currentStreak || 0;
     return 0; 
@@ -157,20 +151,17 @@ export default function HubScreen() {
   const isDayActive = (date: Date) => {
     if (!player?.lastWorkoutDate || currentRealtimeStreak === 0) return false;
     const dStr = date.toLocaleDateString('en-CA');
-    // Using string comparison for accuracy across timezones
     const [ly, lm, ld] = player.lastWorkoutDate.split('-');
     const [cy, cm, cd] = dStr.split('-');
-    
     const lastWorkoutTime = new Date(Number(ly), Number(lm) - 1, Number(ld)).getTime();
     const currentCheckTime = new Date(Number(cy), Number(cm) - 1, Number(cd)).getTime();
-    
-    const diffInDays = (lastWorkoutTime - currentCheckTime) / (1000 * 60 * 60 * 24);
-    return diffInDays >= 0 && diffInDays < currentRealtimeStreak;
+    const diffInDays = Math.round((lastWorkoutTime - currentCheckTime) / (1000 * 60 * 60 * 24));
+    return diffInDays >= 0 && diffInDays < player.currentStreak;
   };
 
   const isRestDay = (date: Date) => {
     const dStr = date.toLocaleDateString('en-CA');
-    return player.restDaysUsed.includes(dStr);
+    return (player.restDaysUsed || []).includes(dStr);
   };
 
   useFocusEffect(
@@ -178,14 +169,8 @@ export default function HubScreen() {
       let isActive = true;
       const fetchSave = async () => {
         const savedData = await loadGame();
-        
-        // Trigger maintenance on boot/focus
         const { isModified, syncedData } = performSystemMaintenance(savedData);
-        
-        if (isModified) {
-          await saveGame(syncedData);
-        }
-        
+        if (isModified) await saveGame(syncedData);
         if (isActive) {
           if (!syncedData.hasCompletedOnboarding) {
             router.replace('/onboarding');
@@ -204,8 +189,7 @@ export default function HubScreen() {
     }, [player.level, isLoaded])
   );
 
-  const getRequiredXp = (level: number) => Math.floor(500 * Math.pow(level, 1.5));
-  const requiredXP = getRequiredXp(player.level);
+  const requiredXP = Math.floor(500 * Math.pow(player.level, 1.5));
   const xpPercentage = Math.min((player.totalXp / requiredXP) * 100, 100);
 
   if (!isLoaded) return <View style={styles.loadingContainer} />;
@@ -256,6 +240,7 @@ export default function HubScreen() {
             <Ionicons name="shield-checkmark" size={32} color={player.restTokens > 0 ? "#3b82f6" : "#3f3f46"} />
           </View>
           <TouchableOpacity 
+            activeOpacity={0.7}
             style={[styles.useTokenButton, player.restTokens <= 0 && { opacity: 0.5 }]}
             onPress={useRestShield}
             disabled={player.restTokens <= 0}
@@ -264,11 +249,7 @@ export default function HubScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.missionCard}>
-            <Text style={styles.missionTitle}>Current Objective</Text>
-            <Text style={styles.missionName}>Push Day Alpha</Text>
-            <Text style={styles.missionStatus}>In Progress — Head to the Workout Tab</Text>
-        </View>
+        {/* --- Current Objective Card surgically removed --- */}
 
         <View style={styles.trophyCard}>
           <Text style={styles.sectionTitle}>MEDAL CASE</Text>
@@ -304,7 +285,7 @@ export default function HubScreen() {
                 <View key={index} style={[
                     styles.dayNode, 
                     active && styles.dayNodeActive,
-                    resting && styles.dayNodeResting
+                    resting && styles.dayNodeResting // Blue color takes visual priority
                 ]}>
                   <Text style={[
                       styles.dayText, 
@@ -317,8 +298,7 @@ export default function HubScreen() {
           </View>
           
           <Text style={styles.streakSubtext}>
-            Global 1.2x XP Multiplier is {isMultiplierActive ? 'ACTIVE' : 'INACTIVE'}. 
-            {isMultiplierActive ? ' Do not break the chain.' : ' Hit 3 days to ignite.'}
+            {isMultiplierActive ? 'XP Boost ACTIVE. Shield prevents streak loss.' : 'Multiplier starts at 3 days.'}
           </Text>
         </View>
 
@@ -385,10 +365,6 @@ const styles = StyleSheet.create({
   restSubtext: { color: 'white', fontSize: 16, fontWeight: 'bold', marginTop: 4 },
   useTokenButton: { backgroundColor: '#1e1b4b', paddingVertical: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#3b82f6' },
   useTokenText: { color: '#3b82f6', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
-  missionCard: { backgroundColor: '#18181b', borderRadius: 16, padding: 20, marginBottom: 30, borderWidth: 1, borderColor: '#27272a', borderLeftWidth: 4, borderLeftColor: '#10b981' },
-  missionTitle: { color: '#71717a', fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, marginBottom: 8 },
-  missionName: { color: 'white', fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
-  missionStatus: { color: '#a1a1aa', fontSize: 14 },
   trophyCard: { backgroundColor: '#18181b', borderRadius: 16, paddingVertical: 20, paddingLeft: 20, marginBottom: 20, borderWidth: 1, borderColor: '#27272a' },
   badgeContainer: { width: 120, marginRight: 16, alignItems: 'center' },
   badgeLocked: { opacity: 0.5 },
