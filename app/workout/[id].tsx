@@ -6,28 +6,30 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 
 import { QUESTS, EXERCISES, Exercise } from '../../src/data/codex';
-import { loadGame } from '../../src/utils/storage';
+import { loadGame, PlayerData } from '../../src/utils/storage';
+import { getDynamicQuestXp } from '../../src/utils/xpBoost';
 
 export default function ActionChamberScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  
+
   const quest = QUESTS.find((q) => q.id === id);
   const [activeExercises, setActiveExercises] = useState<Exercise[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
   const [syncedIds, setSyncedIds] = useState<string[]>([]);
-  const GOAL = 5; 
+  const [muscleLastTrained, setMuscleLastTrained] = useState<PlayerData['muscleLastTrained']>({});
+  const GOAL = 5;
 
   // --- 1. SESSION SYNC ENGINE (LOCAL TIME ADJUSTED) ---
   useFocusEffect(
     useCallback(() => {
       const syncSession = async () => {
         const player = await loadGame();
-        
+
         // FIXED: Using Local Time format to match storage.ts reset logic
-        const today = new Date().toLocaleDateString('en-CA'); 
+        const today = new Date().toLocaleDateString('en-CA');
         const currentQuestId = Array.isArray(id) ? id[0] : id;
-        
+
         if (!currentQuestId) return;
 
         // Ensure we are looking at today's specific logs
@@ -36,6 +38,7 @@ export default function ActionChamberScreen() {
 
         setCompletedCount(thisQuestCompleted.length);
         setSyncedIds(thisQuestCompleted);
+        setMuscleLastTrained(player.muscleLastTrained || {});
       };
 
       syncSession();
@@ -72,6 +75,8 @@ export default function ActionChamberScreen() {
   if (!quest) return null;
 
   const progressWidth = Math.min((completedCount / GOAL) * 100, 100);
+  const today = new Date().toLocaleDateString('en-CA');
+  const dynamicXp = getDynamicQuestXp(quest, muscleLastTrained, today);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -83,7 +88,7 @@ export default function ActionChamberScreen() {
             <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
           <View style={[styles.xpBadge, { borderColor: quest.color, backgroundColor: quest.color + '20' }]}>
-            <Text style={[styles.xpText, { color: quest.color }]}>{quest.xpMultiplier}x XP BOOST</Text>
+            <Text style={[styles.xpText, { color: quest.color }]}>{dynamicXp.toFixed(1)}x XP BOOST</Text>
           </View>
         </View>
 

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Archetype } from '../data/codex';
+import { Archetype, MuscleGroup } from '../data/codex';
 
 const SAVE_SLOT = '@player_save_data';
 
@@ -21,7 +21,12 @@ export interface PlayerData {
   // --- NEW: ACTIVE SESSION TRACKING ---
   // Tracks sets for exercises currently being performed (prevents progress loss on exit)
   // Key = exerciseId, Value = setsCompleted
-  activeSession: Record<string, number>; 
+  activeSession: Record<string, number>;
+
+  // --- DYNAMIC XP BOOST ENGINE ---
+  // Key = muscle group, Value = last date (YYYY-MM-DD) it was trained.
+  // Drives the Push/Pull/Legs rotation nudge in src/utils/xpBoost.ts.
+  muscleLastTrained: Partial<Record<MuscleGroup, string>>;
 
   // --- REST SHIELD SYSTEM ---
   restTokens: number; 
@@ -47,8 +52,9 @@ const DEFAULT_STATS: PlayerData = {
   end: 10,
   unlockedBadges: [], 
   pushQuestsCompleted: 0,
-  completedToday: {}, 
+  completedToday: {},
   activeSession: {}, // Default empty state
+  muscleLastTrained: {},
 
   restTokens: 3,
   lastTokenResetDate: null,

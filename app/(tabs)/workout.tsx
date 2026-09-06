@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 
 // 1. Import the expanded Master Codex and the Quest interface
 import { QUESTS, Quest, Archetype } from '../../src/data/codex';
-import { loadGame } from '../../src/utils/storage';
+import { loadGame, PlayerData } from '../../src/utils/storage';
+import { getDynamicQuestXp } from '../../src/utils/xpBoost';
 
 const QUEST_GOAL = 5;
 
@@ -13,23 +14,27 @@ export default function QuestBoardScreen() {
   const router = useRouter();
   const [completedToday, setCompletedToday] = useState<Record<string, string[]>>({});
   const [archetype, setArchetype] = useState<Archetype | null>(null);
+  const [muscleLastTrained, setMuscleLastTrained] = useState<PlayerData['muscleLastTrained']>({});
+  const today = new Date().toLocaleDateString('en-CA');
 
-  // Re-sync completion state + archetype from the save file every time this tab gains focus
+  // Re-sync completion state + archetype + training history from the save
+  // file every time this tab gains focus, since the XP boosts below depend
+  // on what was trained most recently and shift day to day.
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
       const syncCompletion = async () => {
         const player = await loadGame();
-        const today = new Date().toLocaleDateString('en-CA');
         const questMap = player.lastWorkoutDate === today ? (player.completedToday || {}) : {};
         if (isActive) {
           setCompletedToday(questMap);
           setArchetype(player.targetArchetype);
+          setMuscleLastTrained(player.muscleLastTrained || {});
         }
       };
       syncCompletion();
       return () => { isActive = false; };
-    }, [])
+    }, [today])
   );
 
   // 2. The Symmetry Engine: filter the board to the player's archetype (older
@@ -74,6 +79,9 @@ export default function QuestBoardScreen() {
             // Because of the guard above, TypeScript now knows 'item' IS a Quest
             const quest = item;
             const isCleared = (completedToday[quest.id]?.length || 0) >= QUEST_GOAL;
+            const dynamicXp = getDynamicQuestXp(quest, muscleLastTrained, today);
+            const isBoosted = dynamicXp > quest.xpMultiplier * 1.05;
+            const isDiscouraged = dynamicXp < quest.xpMultiplier * 0.95;
 
             return (
               <TouchableOpacity 
@@ -105,14 +113,16 @@ export default function QuestBoardScreen() {
                     </Text>
                     
                     <View style={[
-                      styles.rewardPill, 
-                      { 
-                        backgroundColor: (quest.color || '#10b981') + '20', 
-                        borderColor: quest.color || '#10b981' 
+                      styles.rewardPill,
+                      {
+                        backgroundColor: (quest.color || '#10b981') + '20',
+                        borderColor: quest.color || '#10b981'
                       }
                     ]}>
-                      <Text style={[styles.rewardText, { color: quest.color || '#10b981' }]}>
-                        {quest.xpMultiplier}x XP BOOST
+                      {isBoosted && <Ionicons name="trending-up" size={11} color={quest.color || '#10b981'} style={styles.boostIcon} />}
+                      {isDiscouraged && <Ionicons name="trending-down" size={11} color="#71717a" style={styles.boostIcon} />}
+                      <Text style={[styles.rewardText, { color: isDiscouraged ? '#71717a' : (quest.color || '#10b981') }]}>
+                        {dynamicXp.toFixed(1)}x XP BOOST
                       </Text>
                     </View>
                   </>
@@ -171,18 +181,24 @@ const styles = StyleSheet.create({
     marginTop: 8
   },
 
-  rewardPill: { 
-    alignSelf: 'flex-start', 
-    paddingHorizontal: 10, 
-    paddingVertical: 5, 
-    borderRadius: 12, 
-    borderWidth: 1 
+  rewardPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1
   },
 
-  rewardText: { 
-    fontSize: 10, 
-    fontWeight: 'bold', 
-    fontFamily: 'SpaceMono' 
+  boostIcon: {
+    marginRight: 4,
+  },
+
+  rewardText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    fontFamily: 'SpaceMono'
   },
 
   ghostCard: { 

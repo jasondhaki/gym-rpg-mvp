@@ -63,7 +63,7 @@ export default function HubScreen() {
   const [player, setPlayer] = useState<PlayerData>({ 
     level: 1, totalXp: 0, lifetimeVolume: 0, currentStreak: 0, lastWorkoutDate: null,
     str: 10, end: 10, unlockedBadges: [], pushQuestsCompleted: 0,
-    completedToday: {}, activeSession: {}, 
+    completedToday: {}, activeSession: {}, muscleLastTrained: {},
     restTokens: 3, lastTokenResetDate: null, restDaysUsed: [],
     hasCompletedOnboarding: false, playerName: 'Jason Dhaki', weight: 70, height: 175, age: 20, targetArchetype: null
   });

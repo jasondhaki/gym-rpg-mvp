@@ -2,11 +2,12 @@
 
 // 1. Define the Data Structures
 export type Archetype = 'Aesthetic' | 'Juggernaut' | 'Athlete';
+export type MuscleGroup = 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Biceps' | 'Triceps' | 'Abs';
 
 export interface Exercise {
   id: string;
   name: string;
-  muscleGroup: 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Biceps' | 'Triceps' | 'Abs';
+  muscleGroup: MuscleGroup;
   subTarget: string;
   instructions: string[];
   // Which Combat Attribute completing this specific exercise trains
@@ -18,7 +19,7 @@ export interface Quest {
   id: string;
   title: string;
   description: string;
-  targetMuscles: ('Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Biceps' | 'Triceps' | 'Abs')[];
+  targetMuscles: MuscleGroup[];
   xpMultiplier: number;
   attributeFocus: 'STR' | 'END';
   icon: any;

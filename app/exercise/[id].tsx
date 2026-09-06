@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 // Data & Storage Imports
 import { QUESTS, EXERCISES, BADGES } from '../../src/data/codex';
 import { loadGame, saveGame } from '../../src/utils/storage';
+import { getDynamicQuestXp } from '../../src/utils/xpBoost';
 
 export default function ExerciseDetailScreen() {
   const { id, questId } = useLocalSearchParams();
@@ -131,8 +132,12 @@ export default function ExerciseDetailScreen() {
     let newStreak = player.currentStreak || 0;
     let newLifetimeVolume = player.lifetimeVolume || 0;
 
+    // Snapshot the dynamic Push/Pull/Legs rotation boost BEFORE this session's
+    // muscle-training record is updated below, so it reflects prior days only.
+    const dynamicQuestMultiplier = getDynamicQuestXp(quest, player.muscleLastTrained, today);
+
     if (isEligibleForRewards) {
-      const baseUnitXp = (1000 * quest.xpMultiplier) / 10;
+      const baseUnitXp = (1000 * dynamicQuestMultiplier) / 10;
       if (player.lastWorkoutDate !== today) {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
@@ -171,6 +176,11 @@ export default function ExerciseDetailScreen() {
     const updatedActiveSession = { ...player.activeSession };
     delete updatedActiveSession[exerciseId as string];
 
+    // Record today against this muscle group regardless of reward eligibility —
+    // the training happened either way, and the next day's dynamic XP boost
+    // engine (src/utils/xpBoost.ts) needs an accurate recovery history.
+    const updatedMuscleLastTrained = { ...player.muscleLastTrained, [exercise.muscleGroup]: today };
+
     const potentialState = {
       ...player,
       level: newLevel,
@@ -180,6 +190,7 @@ export default function ExerciseDetailScreen() {
       str: Number(newStr.toFixed(1)),
       end: Number(newEnd.toFixed(1)),
       activeSession: updatedActiveSession,
+      muscleLastTrained: updatedMuscleLastTrained,
     };
 
     // Corrected Badge comparison logic (Array length vs Numeric)
