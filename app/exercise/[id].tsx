@@ -107,7 +107,7 @@ export default function ExerciseDetailScreen() {
 
   const handleSyncProgress = async () => {
     await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    if (!quest) { router.back(); return; }
+    if (!quest || !exercise) { router.back(); return; }
 
     const player = await loadGame();
     // Dhaka Local Time Standardization
@@ -140,12 +140,17 @@ export default function ExerciseDetailScreen() {
         newStreak = (player.lastWorkoutDate === yesterdayStr) ? (player.currentStreak || 0) + 1 : 1;
       }
 
+      // Combat Attribute gains are driven by the specific EXERCISE just
+      // performed (a Deadlift trains STR, a Cable Curl trains END), not by
+      // the quest it was pulled from — a quest is just a themed grouping.
+      const exerciseFocus = exercise.attributeFocus;
+
       // Archetype class bonus: Juggernaut/Athlete specialize in their matching
       // attribute focus, Aesthetic is a flat generalist bonus across the board
       const archetype = player.targetArchetype;
       const archetypeXpMultiplier =
-        (archetype === 'Juggernaut' && quest.attributeFocus === 'STR') ||
-        (archetype === 'Athlete' && quest.attributeFocus === 'END')
+        (archetype === 'Juggernaut' && exerciseFocus === 'STR') ||
+        (archetype === 'Athlete' && exerciseFocus === 'END')
           ? 1.1
           : archetype === 'Aesthetic'
           ? 1.05
@@ -158,8 +163,8 @@ export default function ExerciseDetailScreen() {
         newLevel++;
       }
       newLifetimeVolume += 50;
-      if (quest.attributeFocus === 'STR') newStr += archetype === 'Juggernaut' ? 0.6 : 0.5;
-      else if (quest.attributeFocus === 'END') newEnd += archetype === 'Athlete' ? 0.6 : 0.5;
+      if (exerciseFocus === 'STR') newStr += archetype === 'Juggernaut' ? 0.6 : 0.5;
+      else if (exerciseFocus === 'END') newEnd += archetype === 'Athlete' ? 0.6 : 0.5;
     }
 
     // --- CLEANUP: Purge this exercise from Active Sessions once synced ---
@@ -229,7 +234,24 @@ export default function ExerciseDetailScreen() {
 
         <View style={styles.infoSection}>
           <Text style={styles.title}>{exercise.name}</Text>
-          
+
+          <View style={[
+            styles.attributeBadge,
+            exercise.attributeFocus === 'STR' ? styles.attributeBadgeStr : styles.attributeBadgeEnd,
+          ]}>
+            <Ionicons
+              name={exercise.attributeFocus === 'STR' ? 'barbell' : 'heart-half'}
+              size={12}
+              color={exercise.attributeFocus === 'STR' ? '#ef4444' : '#3b82f6'}
+            />
+            <Text style={[
+              styles.attributeBadgeText,
+              { color: exercise.attributeFocus === 'STR' ? '#ef4444' : '#3b82f6' },
+            ]}>
+              TRAINS {exercise.attributeFocus === 'STR' ? 'STRENGTH' : 'ENDURANCE'}
+            </Text>
+          </View>
+
           <View style={styles.setTrackerContainer}>
             <View style={styles.sectionHeaderRow}>
               <Ionicons name="layers-outline" size={14} color="#71717a" />
@@ -309,7 +331,11 @@ const styles = StyleSheet.create({
   cornerTopLeft: { position: 'absolute', top: -1, left: -1, width: 20, height: 20, borderTopWidth: 3, borderLeftWidth: 3, borderTopLeftRadius: 24 },
   cornerBottomRight: { position: 'absolute', bottom: -1, right: -1, width: 20, height: 20, borderBottomWidth: 3, borderRightWidth: 3, borderBottomRightRadius: 24 },
   infoSection: { paddingHorizontal: 25 },
-  title: { color: 'white', fontSize: 28, fontWeight: 'bold', fontFamily: 'CyberpunkFont', marginBottom: 15 },
+  title: { color: 'white', fontSize: 28, fontWeight: 'bold', fontFamily: 'CyberpunkFont', marginBottom: 10 },
+  attributeBadge: { flexDirection: 'row', alignSelf: 'flex-start', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1, marginBottom: 20 },
+  attributeBadgeStr: { backgroundColor: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444' },
+  attributeBadgeEnd: { backgroundColor: 'rgba(59, 130, 246, 0.1)', borderColor: '#3b82f6' },
+  attributeBadgeText: { fontSize: 10, fontWeight: 'bold', letterSpacing: 1, fontFamily: 'monospace' },
   setTrackerContainer: { marginBottom: 25 },
   setCountText: { color: 'white', fontSize: 12, fontWeight: 'bold', fontFamily: 'monospace', marginLeft: 'auto' },
   progressBarTrack: { height: 8, backgroundColor: '#18181b', borderRadius: 4, marginTop: 10, borderWidth: 1, borderColor: '#27272a', overflow: 'hidden' },

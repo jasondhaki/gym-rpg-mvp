@@ -138,6 +138,12 @@ export default function ActionChamberScreen() {
                   </View>
                 </TouchableOpacity>
 
+                <Ionicons
+                  name={ex.attributeFocus === 'STR' ? 'barbell' : 'heart-half'}
+                  size={16}
+                  color={ex.attributeFocus === 'STR' ? '#ef4444' : '#3b82f6'}
+                  style={styles.attributeIcon}
+                />
                 <TouchableOpacity onPress={() => rerollExercise(index)} style={styles.rerollButton}>
                   <Ionicons name="refresh" size={20} color="#71717a" />
                 </TouchableOpacity>
@@ -182,6 +188,7 @@ const styles = StyleSheet.create({
   exerciseNumber: { color: '#3f3f46', fontSize: 18, fontWeight: 'bold', marginRight: 15, width: 25 },
   exerciseName: { color: 'white', fontSize: 16, fontWeight: 'bold' },
   exerciseTag: { fontSize: 10, fontWeight: 'bold', marginTop: 2, fontFamily: 'monospace' },
+  attributeIcon: { marginLeft: 10 },
   rerollButton: { padding: 8, backgroundColor: '#18181b', borderRadius: 8, marginLeft: 10 },
   emptyState: { alignItems: 'center', marginTop: 40, paddingBottom: 40 },
   emptyStateText: { color: '#71717a', marginTop: 15, fontFamily: 'monospace', letterSpacing: 2, fontSize: 10 }

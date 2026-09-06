@@ -7,9 +7,11 @@ export interface Exercise {
   id: string;
   name: string;
   muscleGroup: 'Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Biceps' | 'Triceps' | 'Abs';
-  subTarget: string;      
-  instructions: string[]; 
-  imagePath: any;         
+  subTarget: string;
+  instructions: string[];
+  // Which Combat Attribute completing this specific exercise trains
+  attributeFocus: 'STR' | 'END';
+  imagePath: any;
 }
 
 export interface Quest {
@@ -53,6 +55,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar slowly to your mid-chest while tucking your elbows slightly',
       'Press the bar back up until your arms are extended, exhaling on the way up'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -66,6 +69,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar to your collarbone area in a controlled motion',
       'Drive the weight upward until your arms are straight'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -79,6 +83,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar toward the bottom of your pectorals',
       'Press the bar back to the starting position while focusing on the lower chest squeeze'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -92,6 +97,7 @@ export const EXERCISES: Exercise[] = [
       'Pause briefly when the bar touches your chest',
       'Forcefully press the bar up using your triceps and inner chest'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -105,6 +111,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar until your triceps touch the floor and pause for a second',
       'Press the bar back up to full extension'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -118,6 +125,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the weights until they are level with your chest',
       'Press them back up toward the center, squeezing your pecs at the top'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -131,6 +139,7 @@ export const EXERCISES: Exercise[] = [
       'Feel the stretch in your upper pectorals at the bottom of the movement',
       'Press the weights up and together over your face'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -144,6 +153,7 @@ export const EXERCISES: Exercise[] = [
       'Press the dumbbells straight up toward the ceiling',
       'Lower them back down to your chest in a slow, controlled arc'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -157,6 +167,7 @@ export const EXERCISES: Exercise[] = [
       'Stop when you feel a deep stretch across your chest',
       'Reverse the motion to bring the weights back together as if hugging a tree'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -170,6 +181,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on the stretch in your upper chest fibers',
       'Squeeze your chest to pull the weights back to the starting point'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -183,6 +195,7 @@ export const EXERCISES: Exercise[] = [
       'Slowly lower the weight behind your head while keeping your arms nearly straight',
       'Pull the weight back up to chest level using your chest and serratus'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -196,6 +209,7 @@ export const EXERCISES: Exercise[] = [
       'Bring your hands together in front of your waist in a sweeping motion',
       'Cross your hands slightly at the bottom and squeeze your inner pecs'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -209,6 +223,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the handles upward and together until they are level with your face',
       'Lower back to the start with control to maintain tension on the upper chest'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -222,6 +237,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on squeezing the lower portion of your chest at the bottom',
       'Slowly return to the starting position without letting the weights crash'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -235,6 +251,7 @@ export const EXERCISES: Exercise[] = [
       'Contract your chest to bring the handles together in the center',
       'Slowly return to the start until you feel a comfortable stretch'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -248,6 +265,7 @@ export const EXERCISES: Exercise[] = [
       'Press the handles forward until your arms are almost fully extended',
       'Lower the weight back toward your chest without letting it rest'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -261,6 +279,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your chest hard at the peak of the movement',
       'Slowly lower the handles back until you feel a stretch in the pecs'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -274,6 +293,7 @@ export const EXERCISES: Exercise[] = [
       'Lower your chest until it almost touches the floor',
       'Push yourself back up to the starting position'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -287,6 +307,7 @@ export const EXERCISES: Exercise[] = [
       'Lower your chest toward the bench by bending your elbows',
       'Press back up until your arms are straight'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
   { 
@@ -300,6 +321,7 @@ export const EXERCISES: Exercise[] = [
       'Lower your head and chest toward the floor',
       'Push back up, focusing on using your upper chest fibers'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/chest-day.png') 
   },
 
@@ -315,6 +337,7 @@ export const EXERCISES: Exercise[] = [
       'Pull your chest toward the bar by driving your elbows down toward your ribs',
       'Lower yourself slowly back to a dead hang to maintain control and tension'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -328,6 +351,7 @@ export const EXERCISES: Exercise[] = [
       'Leaning back slightly, pull the bar down to your upper chest while driving your elbows down',
       'Squeeze your lats at the bottom before slowly returning the bar to the top'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -341,6 +365,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the handle toward your mid-chest, keeping your elbows tucked close to your body',
       'Squeeze your shoulder blades together and return to the starting position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -354,6 +379,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the bar to the base of your neck, focusing on your upper back contraction',
       'Control the weight as it rises back up to the starting position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -367,6 +393,7 @@ export const EXERCISES: Exercise[] = [
       'Keeping your arms straight, pull the bar down to your thighs using only your back',
       'Exhale and squeeze your lats at the bottom before slowly raising the bar back up'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -380,6 +407,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the handle down toward your side, focusing on driving the elbow into your hip',
       'Slowly extend your arm back up to feel a deep stretch in the lat before switching'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -393,6 +421,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your elbows tucked in front of you rather than flared to the sides',
       'Lower yourself with control until your arms are fully extended'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -406,6 +435,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the bar toward your lower ribs or navel, driving your elbows back',
       'Squeeze your back at the top and lower the bar under control'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -419,6 +449,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the dumbbell toward your hip, keeping your elbow close to your side',
       'Lower the weight until you feel a stretch in your lat, then repeat'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -432,6 +463,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the handle toward your abdomen while squeezing your shoulder blades together',
       'Return the handle slowly while avoiding leaning too far forward'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -445,6 +477,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the weight toward your chest by retracting your shoulder blades',
       'Lower the weight slowly until your arms are fully extended'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -458,6 +491,7 @@ export const EXERCISES: Exercise[] = [
       'Row the bar up toward your side, keeping your elbow flared slightly out',
       'Lower the bar to the starting point, focusing on the stretch in the outer lat'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -471,6 +505,7 @@ export const EXERCISES: Exercise[] = [
       'Row the weight up toward the bench, keeping your chest glued to the pad',
       'Focus on the contraction in the mid-to-upper back without using momentum'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -484,6 +519,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the dumbbells up toward your ribs, focusing on squeezing your shoulder blades',
       'Lower the weights slowly to ensure maximum tension on the upper back'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -497,6 +533,7 @@ export const EXERCISES: Exercise[] = [
       'Drive through your heels to lift the bar, keeping it close to your shins as you stand tall',
       'Lock out your hips at the top and lower the bar back down by hinging at the hips'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -510,6 +547,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the bar up by extending your hips and back until you are standing tall',
       'Lower the bar back onto the pins with a controlled descent'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -523,6 +561,7 @@ export const EXERCISES: Exercise[] = [
       'Go down until you feel a deep stretch in your hamstrings or until your torso is parallel',
       'Drive your hips forward to return to an upright position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -536,6 +575,7 @@ export const EXERCISES: Exercise[] = [
       'Lift your torso back up until your body is in a straight line, avoiding overextending',
       'Squeeze your lower back and glutes at the top of the movement'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -549,6 +589,7 @@ export const EXERCISES: Exercise[] = [
       'Hold the contraction for a second while squeezing your shoulder blades',
       'Slowly extend your arms back to the starting position without letting the weights touch'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/back-day.png') 
   },
   { 
@@ -562,6 +603,7 @@ export const EXERCISES: Exercise[] = [
       'Pull the rope toward your forehead, pulling the ends apart as you reach your face',
       'Squeeze your rear delts and upper back before slowly releasing the tension'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/back-day.png') 
   },
 
@@ -577,6 +619,7 @@ export const EXERCISES: Exercise[] = [
       'Lower yourself until your thighs are at least parallel to the floor while keeping your chest up',
       'Drive through your heels to return to a standing position, exhaling as you rise'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -590,6 +633,7 @@ export const EXERCISES: Exercise[] = [
       'Squat down deep while ensuring your elbows do not drop toward your knees',
       'Drive upward through the mid-foot, maintaining a proud chest throughout the lift'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -603,6 +647,7 @@ export const EXERCISES: Exercise[] = [
       'Squat down until your elbows touch the inside of your knees, keeping your back flat',
       'Push through the floor to stand back up, squeezing your glutes at the top'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -616,6 +661,7 @@ export const EXERCISES: Exercise[] = [
       'Stop when your thighs form a 90-degree angle, ensuring your lower back stays against the pad',
       'Press the weight back up forcefully without locking your knees at the top'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -629,6 +675,7 @@ export const EXERCISES: Exercise[] = [
       'Ensure your lower back remains pressed firmly against the seat at all times',
       'Push the platform away using your entire foot, stopping just before your knees lock'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -642,6 +689,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your torso upright for quad focus or lean slightly forward for more glute engagement',
       'Drive through your front heel to return to the starting position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -655,6 +703,7 @@ export const EXERCISES: Exercise[] = [
       'Drive through the front foot to stand up and immediately step forward with the trailing leg',
       'Maintain a tight core and steady balance as you progress forward'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -668,6 +717,7 @@ export const EXERCISES: Exercise[] = [
       'Pause for a second at the bottom to feel the stretch in your hip and glute',
       'Push off your back foot to return to the starting position and switch legs'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -681,6 +731,7 @@ export const EXERCISES: Exercise[] = [
       'Avoid "cheating" by pushing off the floor with your trailing foot',
       'Lower yourself back down slowly and with control to the starting position'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -694,6 +745,7 @@ export const EXERCISES: Exercise[] = [
       'Maintain a flat back and stop when you feel a deep stretch in your hamstrings',
       'Drive your hips forward to return to an upright position and squeeze your glutes'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -707,6 +759,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your hips pressed firmly into the pad to avoid using your lower back',
       'Slowly lower the weight back to the starting position, maintaining tension on the hamstrings'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -720,6 +773,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your hamstrings hard at the bottom of the movement',
       'Control the weight as you allow your legs to return to the extended position'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -733,6 +787,7 @@ export const EXERCISES: Exercise[] = [
       'Pull yourself back up by contracting your hamstrings and glutes',
       'Keep your core tight and avoid breaking at the hips during the ascent'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -746,6 +801,7 @@ export const EXERCISES: Exercise[] = [
       'Tuck your chin and squeeze your glutes hard at the top of the movement',
       'Lower your hips back toward the floor with control and repeat'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -759,6 +815,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your arms straight and let the momentum come entirely from your posterior chain',
       'Allow the weight to fall back between your legs while hinging at the hips for the next rep'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -772,6 +829,7 @@ export const EXERCISES: Exercise[] = [
       'Pause and squeeze at the top for a second',
       'Lower the weight slowly to the start, ensuring the plates don\'t crash together'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -785,6 +843,7 @@ export const EXERCISES: Exercise[] = [
       'Lower your body until your knees nearly touch the floor, maintaining a straight line from knees to head',
       'Engage your quads to pull yourself back to an upright standing position'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -798,6 +857,7 @@ export const EXERCISES: Exercise[] = [
       'Press through the balls of your feet to raise your body as high as you can',
       'Squeeze the calves at the top before slowly lowering for the next rep'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -811,6 +871,7 @@ export const EXERCISES: Exercise[] = [
       'Push up through your toes to lift the weight as high as possible',
       'Lower back down under control to maximize the time under tension'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
   { 
@@ -824,6 +885,7 @@ export const EXERCISES: Exercise[] = [
       'Rise up onto your toes as high as possible, contracting your calves',
       'Lower your heels slowly until you feel a complete stretch in the calf muscles'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/leg-day.png') 
   },
 
@@ -839,6 +901,7 @@ export const EXERCISES: Exercise[] = [
       'Press the bar directly overhead until your arms are fully extended',
       'Lower the bar back to your chest with control, keeping your elbows slightly forward'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/OverheadPress.png') 
   },
   { 
@@ -852,6 +915,7 @@ export const EXERCISES: Exercise[] = [
       'Avoid locking your elbows at the top to maintain tension on the deltoids',
       'Slowly lower the dumbbells back to the starting position at ear level'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/OverheadPress.png') 
   },
   { 
@@ -865,6 +929,7 @@ export const EXERCISES: Exercise[] = [
       'Reverse the rotation as you lower the weights back to the starting position',
       'Keep the movement fluid and avoid letting the weights drop too quickly'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/OverheadPress.png') 
   },
   { 
@@ -878,6 +943,7 @@ export const EXERCISES: Exercise[] = [
       'Explosively drive through your legs to help propel the bar overhead',
       'Lower the bar slowly to your chest to catch the weight before the next rep'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/OverheadPress.png') 
   },
   { 
@@ -891,6 +957,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on keeping your back flat against the pad throughout the movement',
       'Lower the handles slowly until you feel a stretch in your shoulders'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/OverheadPress.png') 
   },
   { 
@@ -904,6 +971,7 @@ export const EXERCISES: Exercise[] = [
       'Extend your arm fully and squeeze your shoulder at the peak',
       'Lower the bar back to your shoulder with control'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/OverheadPress.png') 
   },
   { 
@@ -917,6 +985,7 @@ export const EXERCISES: Exercise[] = [
       'Lead the movement with your elbows and keep your pinkies slightly higher than your thumbs',
       'Lower the weights slowly, stopping just before they touch your thighs'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/LateralRaises.png') 
   },
   { 
@@ -930,6 +999,7 @@ export const EXERCISES: Exercise[] = [
       'Maintain a slight bend in the elbow to protect the joint',
       'Control the weight as the cable pulls your arm back across your body'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/LateralRaises.png') 
   },
   { 
@@ -943,6 +1013,7 @@ export const EXERCISES: Exercise[] = [
       'Raise the dumbbell out to the side until your arm is parallel to the ground',
       'Lower the weight slowly, utilizing the increased range of motion from the lean'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/LateralRaises.png') 
   },
   { 
@@ -956,6 +1027,7 @@ export const EXERCISES: Exercise[] = [
       'Pause at the top for a second to maximize the contraction',
       'Slowly return to the start position without letting the weight stack crash'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/LateralRaises.png') 
   },
   { 
@@ -969,6 +1041,7 @@ export const EXERCISES: Exercise[] = [
       'Drive your elbows toward the ceiling, ensuring they stay higher than your wrists',
       'Lower the bar slowly until your arms are fully extended'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -982,6 +1055,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your core tight to prevent your body from swinging for momentum',
       'Lower the weights slowly back to your thighs'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -995,6 +1069,7 @@ export const EXERCISES: Exercise[] = [
       'Maintain a slight bend in your knees and a neutral spine',
       'Control the descent to ensure the front delts do all the work'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1008,6 +1083,7 @@ export const EXERCISES: Exercise[] = [
       'Exhale as you lift and maintain a slight bend in the elbows',
       'Slowly lower the bar back toward the pulley, keeping tension on the shoulders'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1021,6 +1097,7 @@ export const EXERCISES: Exercise[] = [
       'Raise the weights out to the sides by squeezing your rear delts and shoulder blades',
       'Lower the weights slowly, avoiding the urge to use momentum'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1034,6 +1111,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your rear delts and rotate your wrists so your thumbs point backward at the end',
       'Slowly return to the start, feeling the stretch in your upper back'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1047,6 +1125,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on using the back of your shoulders rather than your mid-back',
       'Return to the start position slowly to keep the rear delts under tension'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1060,6 +1139,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your rear delts at the bottom of the movement',
       'Allow the cables to pull your arms back to the starting "X" position with control'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1073,6 +1153,7 @@ export const EXERCISES: Exercise[] = [
       'Hold the squeeze at the top for a second, then lower back down',
       'Avoid rolling your shoulders; the movement should be strictly vertical'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
   { 
@@ -1086,6 +1167,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your traps at the peak of the movement',
       'Slowly lower the weights back to the starting position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/shoulders-day.png') 
   },
 
@@ -1101,6 +1183,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your biceps hard at the top of the movement',
       'Lower the bar slowly to the starting position, ensuring full arm extension'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1114,6 +1197,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on the contraction at the peak of the lift',
       'Lower the weight with control, resisting the pull of gravity'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1127,6 +1211,7 @@ export const EXERCISES: Exercise[] = [
       'Curl the bar up toward your chin without lifting your elbows off the pad',
       'Lower the weight slowly to maintain tension on the lower bicep fibers'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1140,6 +1225,7 @@ export const EXERCISES: Exercise[] = [
       'Feel the engagement in your forearms and the brachialis muscle',
       'Lower back down under control to the starting position'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1153,6 +1239,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze hard at the top where the tension is highest',
       'Slowly lower the bar back to a dead hang'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1166,6 +1253,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on the outer portion of the bicep during the contraction',
       'Slowly extend your arms back to the bottom'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1179,6 +1267,7 @@ export const EXERCISES: Exercise[] = [
       'Emphasize the squeeze on the inner head of the bicep at the top',
       'Lower the bar with a controlled tempo'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1192,6 +1281,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze the bicep at the shoulder and rotate back as you lower the weight',
       'Repeat with the opposite arm, maintaining a stable core'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1205,6 +1295,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your wrists stiff and avoid any swinging of the torso',
       'Lower the weights slowly to feel the tension in the forearms and outer biceps'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1218,6 +1309,7 @@ export const EXERCISES: Exercise[] = [
       'Feel the intense stretch in the biceps at the bottom of each rep',
       'Lower the weights fully before starting the next contraction'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1231,6 +1323,7 @@ export const EXERCISES: Exercise[] = [
       'Hold the peak contraction for a second to emphasize the "mountain" of the muscle',
       'Lower the weight completely and repeat for the desired reps'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1244,6 +1337,7 @@ export const EXERCISES: Exercise[] = [
       'Lower the weight with this overhand grip to target the forearms',
       'Rotate your wrists back to the starting position at the bottom'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1257,6 +1351,7 @@ export const EXERCISES: Exercise[] = [
       'Keep the dumbbell close to your body throughout the movement',
       'Lower back to the side and switch arms'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1270,6 +1365,7 @@ export const EXERCISES: Exercise[] = [
       'Curl the weight toward your shoulder while keeping your shoulder down',
       'Control the descent to maximize muscle fiber recruitment'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1283,6 +1379,7 @@ export const EXERCISES: Exercise[] = [
       'Benefit from the constant resistance of the cable throughout the range of motion',
       'Slowly return to the start, resisting the pull of the machine'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1296,6 +1393,7 @@ export const EXERCISES: Exercise[] = [
       'Curl your hands toward your ears, squeezing your biceps as if doing a pose',
       'Extend your arms back out slowly to the starting position'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1309,6 +1407,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on the squeeze in the outer bicep and forearm',
       'Lower with control to maintain tension'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1322,6 +1421,7 @@ export const EXERCISES: Exercise[] = [
       'Curl the handle forward and up while keeping your elbow pinned back',
       'Lower back to the stretched position with a slow tempo'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1335,6 +1435,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze the biceps at the top and avoid letting the weight stack crash',
       'Focus on the eccentric (lowering) phase for maximum growth'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
   { 
@@ -1348,6 +1449,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your elbows in front of you to emphasize bicep recruitment',
       'Lower yourself slowly back to a full hang'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/biceps-day.png') 
   },
 
@@ -1363,6 +1465,7 @@ export const EXERCISES: Exercise[] = [
       'Flare the ends of the rope outward at the bottom to maximize the triceps contraction',
       'Slowly return the rope to chest height, keeping your upper arms stationary'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/TricepPushdown.png') 
   },
   { 
@@ -1376,6 +1479,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your triceps hard at the bottom for a full second',
       'Control the ascent, stopping when your forearms are just above parallel to the floor'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/TricepPushdown.png') 
   },
   { 
@@ -1389,6 +1493,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on driving the weight through the palms of your hands',
       'Maintain a slight forward lean to allow for a full range of motion'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/TricepPushdown.png') 
   },
   { 
@@ -1402,6 +1507,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on the mind-muscle connection as you isolate one tricep at a time',
       'Switch arms and repeat, ensuring equal intensity on both sides'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/TricepPushdown.png') 
   },
   { 
@@ -1415,6 +1521,7 @@ export const EXERCISES: Exercise[] = [
       'Extend your arms forward and upward until they are straight',
       'Slowly lower the rope back behind your head to feel a deep stretch in the long head'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/TricepPushdown.png') 
   },
   { 
@@ -1428,6 +1535,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your upper arm glued to your side and extend the cable straight back behind your hip',
       'Pause and squeeze at the peak before slowly returning to the start'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1441,6 +1549,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on the medial head contraction at the bottom of the movement',
       'Return to the top slowly, maintaining tension throughout the arc'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1454,6 +1563,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your elbows tucked in and avoid letting them flare out to the sides',
       'Extend your arms back to the starting position using only your triceps'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/Skullcrushers.png') 
   },
   { 
@@ -1467,6 +1577,7 @@ export const EXERCISES: Exercise[] = [
       'Push back up explosively, focusing on the squeeze in your triceps and inner chest',
       'Maintain a straight line from your head to your heels throughout the set'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1480,6 +1591,7 @@ export const EXERCISES: Exercise[] = [
       'Press the bar back up forcefully, emphasizing the triceps lock-out',
       'Ensure the bar path remains consistent to protect your wrists and elbows'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1493,6 +1605,7 @@ export const EXERCISES: Exercise[] = [
       'Stop when your forearms touch your biceps',
       'Press the bar back up in a straight line, driving through your triceps'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1506,6 +1619,7 @@ export const EXERCISES: Exercise[] = [
       'Lower until you feel a deep stretch in your triceps',
       'Extend your arms back to the overhead position, avoiding any arching of the back'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1519,6 +1633,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your elbows as close to your head as possible during the movement',
       'Press the weight back to the ceiling until your arms are fully extended'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1532,6 +1647,7 @@ export const EXERCISES: Exercise[] = [
       'Press the dumbbell back to the start, focusing on the triceps contraction',
       'Complete the reps and switch to the other arm'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1545,6 +1661,7 @@ export const EXERCISES: Exercise[] = [
       'Extend your arm back until it is straight, squeezing the tricep at the top',
       'Slowly lower the weight back to the starting position without moving your elbow'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1558,6 +1675,7 @@ export const EXERCISES: Exercise[] = [
       'The dumbbells should touch your chest lightly near your collarbone',
       'Press the weights back up using only your triceps, keeping the elbows out'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1571,6 +1689,7 @@ export const EXERCISES: Exercise[] = [
       'Lower yourself until your elbows are at a 90-degree angle, keeping them tucked close to your body',
       'Push yourself back up forcefully to the starting position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1584,6 +1703,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your back close to the bench throughout the movement',
       'Press back up until your arms are straight, squeezing the triceps at the top'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1597,6 +1717,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on keeping your shoulders down and your triceps doing the work',
       'Slowly allow the handles to return to the starting position'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
   { 
@@ -1610,6 +1731,7 @@ export const EXERCISES: Exercise[] = [
       'Extend your arm diagonally upward across your body',
       'Slowly return the handle behind your head, feeling the deep stretch in the long head'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/triceps-day.png') 
   },
 
@@ -1625,6 +1747,7 @@ export const EXERCISES: Exercise[] = [
       'Curl your upper body toward your knees, lifting only your shoulder blades off the floor',
       'Exhale and squeeze your abs at the top before slowly lowering back down'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1638,6 +1761,7 @@ export const EXERCISES: Exercise[] = [
       'Focus on tilting your pelvis upward rather than just swinging your legs',
       'Lower your legs slowly to the starting position without letting your body swing'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1651,6 +1775,7 @@ export const EXERCISES: Exercise[] = [
       'Lift your hips slightly off the floor at the peak of the movement',
       'Slowly lower your feet back toward the floor without letting your lower back arch'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1664,6 +1789,7 @@ export const EXERCISES: Exercise[] = [
       'Squeeze your abs hard at the bottom and avoid sitting back on your heels',
       'Return to the starting position slowly, feeling the stretch in your abdominal wall'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1677,6 +1803,7 @@ export const EXERCISES: Exercise[] = [
       'Use your abdominal muscles to lift your torso until your chest reaches your thighs',
       'Lower yourself back down with control to keep constant tension on the core'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1690,6 +1817,7 @@ export const EXERCISES: Exercise[] = [
       'Reach for your toes at the peak of the movement',
       'Slowly lower both your upper and lower body back to the floor'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1703,6 +1831,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your core tight and avoid letting your lower back sag toward the floor',
       'Pull the wheel back toward your knees by contracting your abdominals'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1716,6 +1845,7 @@ export const EXERCISES: Exercise[] = [
       'Rotate your torso to the right, then to the left, touching the floor beside you',
       'Keep your core engaged and your neck neutral throughout the rotation'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1729,6 +1859,7 @@ export const EXERCISES: Exercise[] = [
       'Switch sides, bringing your left elbow toward your right knee',
       'Maintain a "pedaling" motion while keeping your shoulder blades off the floor'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1742,6 +1873,7 @@ export const EXERCISES: Exercise[] = [
       'Rotate your torso and pivot your back foot as you move the weight',
       'Slowly return to the starting position and repeat before switching sides'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1755,6 +1887,7 @@ export const EXERCISES: Exercise[] = [
       'Engage your obliques to prevent your hips from dipping toward the floor',
       'Hold the position for the required time and then switch sides'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1768,6 +1901,7 @@ export const EXERCISES: Exercise[] = [
       'Contract the opposite oblique to pull your torso back to an upright position',
       'Complete the reps for one side before switching the dumbbell to the other hand'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1781,6 +1915,7 @@ export const EXERCISES: Exercise[] = [
       'Lower your knees back to the center with control',
       'Repeat the movement toward the left armpit'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1794,6 +1929,7 @@ export const EXERCISES: Exercise[] = [
       'Avoid letting your hips rise too high or sag too low',
       'Breathe deeply while maintaining total body tension'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1807,6 +1943,7 @@ export const EXERCISES: Exercise[] = [
       'Lift your shoulders off the floor, forming a shallow "bowl" or "banana" shape',
       'Hold this position while ensuring your lower back never leaves the floor'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1820,6 +1957,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your lower back pressed into the floor to maintain core engagement',
       'Return to the start and repeat with the opposite arm and leg'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1833,6 +1971,7 @@ export const EXERCISES: Exercise[] = [
       'Keep your hips square to the floor and your spine in a neutral position',
       'Hold for a second, then return to the starting position and switch sides'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1846,6 +1985,7 @@ export const EXERCISES: Exercise[] = [
       'Resist the cable’s pull to rotate your torso toward the machine',
       'Hold for a second with arms extended before bringing the handle back to your chest'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1859,6 +1999,7 @@ export const EXERCISES: Exercise[] = [
       'Quickly switch legs, bringing the other knee forward',
       'Maintain a fast, rhythmic pace while keeping your core braced'
     ], 
+    attributeFocus: 'END',
     imagePath: require('../../assets/images/abs-day.png') 
   },
   { 
@@ -1872,6 +2013,7 @@ export const EXERCISES: Exercise[] = [
       'Slowly lower your body as a single rigid unit while keeping your back straight',
       'Stop just before your body touches the bench and lift back up to vertical'
     ], 
+    attributeFocus: 'STR',
     imagePath: require('../../assets/images/abs-day.png') 
   }
 ];
