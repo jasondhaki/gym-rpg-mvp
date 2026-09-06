@@ -139,15 +139,27 @@ export default function ExerciseDetailScreen() {
         const yesterdayStr = yesterday.toLocaleDateString('en-CA');
         newStreak = (player.lastWorkoutDate === yesterdayStr) ? (player.currentStreak || 0) + 1 : 1;
       }
-      newTotalXp += Math.floor(baseUnitXp * (newStreak >= 3 ? 1.2 : 1.0));
+
+      // Archetype class bonus: Juggernaut/Athlete specialize in their matching
+      // attribute focus, Aesthetic is a flat generalist bonus across the board
+      const archetype = player.targetArchetype;
+      const archetypeXpMultiplier =
+        (archetype === 'Juggernaut' && quest.attributeFocus === 'STR') ||
+        (archetype === 'Athlete' && quest.attributeFocus === 'END')
+          ? 1.1
+          : archetype === 'Aesthetic'
+          ? 1.05
+          : 1.0;
+
+      newTotalXp += Math.floor(baseUnitXp * (newStreak >= 3 ? 1.2 : 1.0) * archetypeXpMultiplier);
       const getRequiredXp = (lvl: number) => Math.floor(500 * Math.pow(lvl, 1.5));
       while (newTotalXp >= getRequiredXp(newLevel)) {
         newTotalXp -= getRequiredXp(newLevel);
         newLevel++;
       }
       newLifetimeVolume += 50;
-      if (quest.attributeFocus === 'STR') newStr += 0.5; 
-      else if (quest.attributeFocus === 'END') newEnd += 0.5; 
+      if (quest.attributeFocus === 'STR') newStr += archetype === 'Juggernaut' ? 0.6 : 0.5;
+      else if (quest.attributeFocus === 'END') newEnd += archetype === 'Athlete' ? 0.6 : 0.5;
     }
 
     // --- CLEANUP: Purge this exercise from Active Sessions once synced ---

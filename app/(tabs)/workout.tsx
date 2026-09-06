@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 // 1. Import the expanded Master Codex and the Quest interface
-import { QUESTS, Quest } from '../../src/data/codex';
+import { QUESTS, Quest, Archetype } from '../../src/data/codex';
 import { loadGame } from '../../src/utils/storage';
 
 const QUEST_GOAL = 5;
@@ -12,8 +12,9 @@ const QUEST_GOAL = 5;
 export default function QuestBoardScreen() {
   const router = useRouter();
   const [completedToday, setCompletedToday] = useState<Record<string, string[]>>({});
+  const [archetype, setArchetype] = useState<Archetype | null>(null);
 
-  // Re-sync completion state from the save file every time this tab gains focus
+  // Re-sync completion state + archetype from the save file every time this tab gains focus
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -21,15 +22,23 @@ export default function QuestBoardScreen() {
         const player = await loadGame();
         const today = new Date().toLocaleDateString('en-CA');
         const questMap = player.lastWorkoutDate === today ? (player.completedToday || {}) : {};
-        if (isActive) setCompletedToday(questMap);
+        if (isActive) {
+          setCompletedToday(questMap);
+          setArchetype(player.targetArchetype);
+        }
       };
       syncCompletion();
       return () => { isActive = false; };
     }, [])
   );
 
-  // 2. The Symmetry Engine: Typing the array as a Union of Quest or Ghost object
-  const displayCards: (Quest | { isGhost: boolean; id: string })[] = [...QUESTS];
+  // 2. The Symmetry Engine: filter the board to the player's archetype (older
+  // saves with no archetype set fall back to seeing every quest), then type
+  // the array as a Union of Quest or Ghost object
+  const questsForPlayer = archetype
+    ? QUESTS.filter((q) => q.archetypes.includes(archetype))
+    : QUESTS;
+  const displayCards: (Quest | { isGhost: boolean; id: string })[] = [...questsForPlayer];
 
   if (displayCards.length % 2 !== 0) {
     displayCards.push({ isGhost: true, id: 'filler-ghost' });

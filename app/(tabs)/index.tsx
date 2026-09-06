@@ -8,6 +8,19 @@ import { loadGame, saveGame, PlayerData } from '../../src/utils/storage';
 import LevelUpModal from '../../src/components/LevelUpModal';
 import { BADGES } from '../../src/data/codex';
 
+const ARCHETYPE_INFO: Record<string, { title: string; tagline: string; icon: any; color: string }> = {
+  Aesthetic: { title: 'AESTHETIC', tagline: 'Hypertrophy & Symmetry', icon: 'body', color: '#a855f7' },
+  Juggernaut: { title: 'JUGGERNAUT', tagline: 'Raw Power & Mass', icon: 'barbell', color: '#ef4444' },
+  Athlete: { title: 'ATHLETE', tagline: 'Endurance & Agility', icon: 'flash', color: '#3b82f6' },
+};
+
+const BioTile = ({ label, value }: { label: string; value: string }) => (
+  <View style={styles.bioTile}>
+    <Text style={styles.bioTileLabel}>{label}</Text>
+    <Text style={styles.bioTileValue}>{value}</Text>
+  </View>
+);
+
 const getRankDetails = (level: number) => {
   if (level < 10) return { title: 'ROOKIE LIFTER', icon: 'shield-half-outline', color: '#a1a1aa', border: '#3f3f46', glow: 0 };
   if (level < 25) return { title: 'IRON WARRIOR', icon: 'shield', color: '#94a3b8', border: '#64748b', glow: 0.2 };
@@ -198,6 +211,9 @@ export default function HubScreen() {
   const strMax = Math.max(100, Math.ceil((player.str || 10) / 100) * 100);
   const endMax = Math.max(100, Math.ceil((player.end || 10) / 100) * 100);
   const volMax = Math.max(10000, Math.ceil((player.lifetimeVolume || 0) / 10000) * 10000);
+  const heightM = (player.height || 175) / 100;
+  const bmi = heightM > 0 ? (player.weight || 70) / (heightM * heightM) : 0;
+  const archetypeInfo = player.targetArchetype ? ARCHETYPE_INFO[player.targetArchetype] : null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -323,10 +339,30 @@ export default function HubScreen() {
       <Modal visible={showAttributesModal} transparent={true} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.detailedModalCard}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={styles.modalTitleText}>CHARACTER SHEET</Text>
               <Ionicons name="analytics" size={24} color="#10b981" />
             </View>
+
+            {archetypeInfo && (
+              <View style={[styles.archetypeBanner, { borderColor: archetypeInfo.color }]}>
+                <View style={[styles.archetypeIconBox, { backgroundColor: archetypeInfo.color + '20' }]}>
+                  <Ionicons name={archetypeInfo.icon} size={22} color={archetypeInfo.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.archetypeTitle, { color: archetypeInfo.color }]}>{archetypeInfo.title}</Text>
+                  <Text style={styles.archetypeTagline}>{archetypeInfo.tagline}</Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.bioRow}>
+              <BioTile label="AGE" value={`${player.age || '--'}`} />
+              <BioTile label="WEIGHT" value={`${player.weight || '--'} kg`} />
+              <BioTile label="HEIGHT" value={`${player.height || '--'} cm`} />
+              <BioTile label="BMI" value={bmi > 0 ? bmi.toFixed(1) : '--'} />
+            </View>
+
             <DetailedStatBar label="STRENGTH" current={player.str || 10} max={strMax} color="#ef4444" />
             <DetailedStatBar label="ENDURANCE" current={player.end || 10} max={endMax} color="#3b82f6" />
             <DetailedStatBar label="LIFETIME VOLUME" current={player.lifetimeVolume || 0} max={volMax} color="#10b981" />
@@ -394,6 +430,14 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(9, 9, 11, 0.9)', justifyContent: 'flex-end' },
   detailedModalCard: { backgroundColor: '#18181b', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, paddingBottom: 50, borderWidth: 1, borderColor: '#27272a', borderBottomWidth: 0 },
   modalTitleText: { color: 'white', fontSize: 24, fontWeight: 'bold', fontFamily: 'CyberpunkFont', letterSpacing: 1 },
+  archetypeBanner: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#09090b', borderRadius: 14, padding: 14, borderWidth: 1, marginBottom: 16 },
+  archetypeIconBox: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  archetypeTitle: { fontSize: 14, fontWeight: 'bold', fontFamily: 'CyberpunkFont', letterSpacing: 1 },
+  archetypeTagline: { color: '#71717a', fontSize: 11, marginTop: 2, fontFamily: 'monospace' },
+  bioRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
+  bioTile: { flex: 1, backgroundColor: '#09090b', borderRadius: 10, paddingVertical: 10, alignItems: 'center', borderWidth: 1, borderColor: '#27272a' },
+  bioTileLabel: { color: '#71717a', fontSize: 8, fontWeight: 'bold', letterSpacing: 1, marginBottom: 4, fontFamily: 'monospace' },
+  bioTileValue: { color: 'white', fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace' },
   detailedStatContainer: { marginBottom: 24 },
   detailedStatHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8, paddingHorizontal: 12 },
   detailedStatLabel: { fontSize: 14, fontWeight: 'bold', fontFamily: 'monospace', letterSpacing: 1 },

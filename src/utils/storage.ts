@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Archetype } from '../data/codex';
 
 const SAVE_SLOT = '@player_save_data';
 
@@ -33,7 +34,7 @@ export interface PlayerData {
   weight: number; 
   height: number; 
   age: number;
-  targetArchetype: 'Aesthetic' | 'Juggernaut' | 'Athlete' | null;
+  targetArchetype: Archetype | null;
 }
 
 const DEFAULT_STATS: PlayerData = {

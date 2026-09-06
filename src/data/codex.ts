@@ -1,6 +1,8 @@
 // src/data/codex.ts
 
 // 1. Define the Data Structures
+export type Archetype = 'Aesthetic' | 'Juggernaut' | 'Athlete';
+
 export interface Exercise {
   id: string;
   name: string;
@@ -16,10 +18,12 @@ export interface Quest {
   description: string;
   targetMuscles: ('Chest' | 'Back' | 'Legs' | 'Shoulders' | 'Biceps' | 'Triceps' | 'Abs')[];
   xpMultiplier: number;
-  attributeFocus: 'STR' | 'END'; 
-  icon: any;   
-  color: string; 
-  imagePath: any; 
+  attributeFocus: 'STR' | 'END';
+  icon: any;
+  color: string;
+  imagePath: any;
+  // Which target archetypes see this quest on their board (Phase: Archetype Integration)
+  archetypes: Archetype[];
 }
 
 export interface Badge {
@@ -1883,7 +1887,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'body',
     color: '#ffffff',
-    imagePath: require('../../assets/images/full-body.png')
+    imagePath: require('../../assets/images/full-body.png'),
+    archetypes: ['Juggernaut', 'Athlete', 'Aesthetic']
   },
   {
     id: 'push_day_alpha',
@@ -1894,7 +1899,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'flame',
     color: '#10b981',
-    imagePath: require('../../assets/images/push-day.png')
+    imagePath: require('../../assets/images/push-day.png'),
+    archetypes: ['Juggernaut', 'Athlete']
   },
   {
     id: 'pull_day_beta',
@@ -1905,7 +1911,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'thunderstorm',
     color: '#3b82f6',
-    imagePath: require('../../assets/images/pull-day.png')
+    imagePath: require('../../assets/images/pull-day.png'),
+    archetypes: ['Juggernaut', 'Athlete']
   },
   {
     id: 'leg_day_reckoning',
@@ -1916,7 +1923,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'barbell',
     color: '#ef4444',
-    imagePath: require('../../assets/images/leg-day.png')
+    imagePath: require('../../assets/images/leg-day.png'),
+    archetypes: ['Juggernaut', 'Athlete']
   },
   {
     id: 'chest_vanguard',
@@ -1927,7 +1935,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'shield',
     color: '#34d399',
-    imagePath: require('../../assets/images/chest-day.png')
+    imagePath: require('../../assets/images/chest-day.png'),
+    archetypes: ['Juggernaut', 'Aesthetic']
   },
   {
     id: 'back_protocol',
@@ -1938,7 +1947,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'layers',
     color: '#6366f1',
-    imagePath: require('../../assets/images/back-day.png')
+    imagePath: require('../../assets/images/back-day.png'),
+    archetypes: ['Juggernaut', 'Aesthetic']
   },
   {
     id: 'shoulder_garrison',
@@ -1949,7 +1959,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'STR',
     icon: 'triangle',
     color: '#a855f7',
-    imagePath: require('../../assets/images/shoulders-day.png')
+    imagePath: require('../../assets/images/shoulders-day.png'),
+    archetypes: ['Juggernaut', 'Aesthetic']
   },
   {
     id: 'bicep_initiative',
@@ -1960,7 +1971,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'END',
     icon: 'fitness',
     color: '#fbbf24',
-    imagePath: require('../../assets/images/biceps-day.png')
+    imagePath: require('../../assets/images/biceps-day.png'),
+    archetypes: ['Athlete', 'Aesthetic']
   },
   {
     id: 'tricep_overdrive',
@@ -1971,7 +1983,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'END',
     icon: 'construct',
     color: '#f97316',
-    imagePath: require('../../assets/images/triceps-day.png')
+    imagePath: require('../../assets/images/triceps-day.png'),
+    archetypes: ['Athlete', 'Aesthetic']
   },
   {
     id: 'core_stability',
@@ -1982,7 +1995,8 @@ export const QUESTS: Quest[] = [
     attributeFocus: 'END',
     icon: 'scan',
     color: '#06b6d4',
-    imagePath: require('../../assets/images/abs-day.png')
+    imagePath: require('../../assets/images/abs-day.png'),
+    archetypes: ['Athlete', 'Aesthetic']
   }
 ];
 
